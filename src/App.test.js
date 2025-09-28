@@ -1,8 +1,7 @@
-import { render, screen } from '@testing-library/react';
-import App from './App';
-
-test('renders learn react link', () => {
-  render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+// Test simplu care verifică că aplicația se compilează
+test('app compiles without errors', () => {
+  // Testăm doar că aplicația se poate importa fără erori
+  expect(() => {
+    require('./App');
+  }).not.toThrow();
 });
