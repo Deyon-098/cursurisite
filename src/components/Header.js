@@ -44,25 +44,32 @@ export default function Header() {
         </button>
 
         {/* Desktop Navigation */}
-        <nav className="main-nav desktop-nav">
-          <NavLink to="/" end>Home</NavLink>
-          <NavLink to="/courses">Courses</NavLink>
-          <NavLink to="/contact">Contact</NavLink>
-          {loading ? (
-            <span className="welcome">Se încarcă...</span>
-          ) : user ? (
-            <>
-              <NavLink to="/dashboard" className="btn ghost">📊 Dashboard</NavLink>
-              <span className="welcome">Salut, {user.name}</span>
-              <button className="btn ghost" onClick={logout}>Logout</button>
-            </>
-          ) : (
-            <NavLink to="/login">Login</NavLink>
-          )}
-          <NavLink to="/cart" className="cart-link">
-            🛒 Cart ({totals.count})
-          </NavLink>
-        </nav>
+        <div className="nav-container">
+          <nav className="main-nav desktop-nav">
+            <div className="nav-primary">
+              <NavLink to="/" end>Home</NavLink>
+              <NavLink to="/courses">Courses</NavLink>
+              <NavLink to="/contact">Contact</NavLink>
+            </div>
+            
+            <div className="nav-secondary">
+              {loading ? (
+                <span className="welcome">Se încarcă...</span>
+              ) : user ? (
+                <>
+                  <NavLink to="/dashboard" className="btn ghost">📊 Dashboard</NavLink>
+                  <span className="welcome">Salut, {user.name}</span>
+                  <button className="btn ghost" onClick={logout}>Logout</button>
+                </>
+              ) : (
+                <NavLink to="/login">Login</NavLink>
+              )}
+              <NavLink to="/cart" className="cart-link">
+                🛒 Cart ({totals.count})
+              </NavLink>
+            </div>
+          </nav>
+        </div>
 
         {/* Mobile Navigation */}
         <nav className={`main-nav mobile-nav ${isMobileMenuOpen ? 'open' : ''}`}>

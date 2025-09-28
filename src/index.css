@@ -137,6 +137,43 @@ html {
   position: relative;
 }
 
+/* Navigation Container */
+.nav-container {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+  margin-left: 120px; /* Create space between logo and navigation */
+}
+
+/* Responsive adjustments for navigation container */
+@media (max-width: 1024px) {
+  .nav-container {
+    margin-left: 80px;
+  }
+  
+  .nav-secondary {
+    gap: 16px;
+  }
+}
+
+@media (max-width: 900px) {
+  .nav-container {
+    margin-left: 60px;
+  }
+  
+  .desktop-nav {
+    gap: 32px;
+  }
+  
+  .nav-primary {
+    gap: 24px;
+  }
+  
+  .nav-secondary {
+    gap: 12px;
+  }
+}
+
 /* Mobile Menu Toggle */
 .mobile-menu-toggle {
   display: none;
@@ -186,7 +223,51 @@ html {
 .desktop-nav {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 48px;
+}
+
+/* Primary Navigation (Home, Courses, Contact) */
+.nav-primary {
+  display: flex;
+  align-items: center;
   gap: 32px;
+}
+
+/* Secondary Navigation (User actions, Cart) */
+.nav-secondary {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+/* Welcome message styling */
+.nav-secondary .welcome {
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 12px;
+  background: rgba(0, 255, 136, 0.05);
+  border: 1px solid rgba(0, 255, 136, 0.1);
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+/* Cart link special styling */
+.nav-secondary .cart-link {
+  background: var(--glass-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 8px 16px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.nav-secondary .cart-link:hover {
+  background: rgba(0, 255, 136, 0.1);
+  border-color: var(--accent-green);
+  transform: translateY(-1px);
 }
 
 /* Mobile Navigation */
@@ -1571,6 +1652,11 @@ html {
     padding-right: 40px;
   }
   
+  /* Hide navigation container on mobile */
+  .nav-container {
+    display: none;
+  }
+  
   /* Show mobile menu toggle, hide desktop nav */
   .mobile-menu-toggle {
     display: block;
@@ -1798,6 +1884,16 @@ html {
   .header-inner {
     padding-left: 24px;
     padding-right: 24px;
+  }
+  
+  /* Ensure navigation is hidden on very small screens */
+  .nav-container {
+    display: none;
+  }
+  
+  /* Adjust margin for smaller logo on mobile */
+  .nav-container {
+    margin-left: 60px;
   }
   
   .brand {

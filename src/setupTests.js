@@ -33,3 +33,25 @@ const localStorageMock = {
   clear: jest.fn(),
 };
 global.localStorage = localStorageMock;
+
+// Mock castable-video
+jest.mock('castable-video', () => ({}));
+
+// Mock GSAP
+global.gsap = {
+  fromTo: jest.fn(),
+  to: jest.fn(),
+  from: jest.fn(),
+  set: jest.fn(),
+  timeline: jest.fn(() => ({
+    to: jest.fn(),
+    from: jest.fn(),
+    fromTo: jest.fn(),
+    set: jest.fn(),
+    play: jest.fn(),
+    pause: jest.fn(),
+    reverse: jest.fn(),
+  })),
+};
+
+global.window.gsap = global.gsap;
