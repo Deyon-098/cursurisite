@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { getCourseById } from '../data/coursesFirebase';
 import { useAuth } from '../context/AuthContext';
+import { markLessonComplete, getCourseProgress } from '../firebase/firestore';
 
 export default function CourseLearning() {
   const { id } = useParams();
@@ -94,10 +95,32 @@ export default function CourseLearning() {
         const courseData = await getCourseById(id);
         
         if (courseData) {
+          const lessons = generateLessons(courseData.title);
           setCourse({
             ...courseData,
-            lessons: generateLessons(courseData.title)
+            lessons
           });
+
+          // Încarcă progresul existent din Firebase
+          if (user) {
+            const progressData = await getCourseProgress(user.id, courseData.id);
+            if (progressData) {
+              const completedLessons = new Set(progressData.completedLessons || []);
+              setCompletedLessons(completedLessons);
+              
+              // Deblochează lecțiile completate și următoarea
+              lessons.forEach((lesson, index) => {
+                if (completedLessons.has(index)) {
+                  lesson.completed = true;
+                  lesson.unlocked = true;
+                } else if (index > 0 && completedLessons.has(index - 1)) {
+                  lesson.unlocked = true;
+                }
+              });
+              
+              console.log('📈 Progres încărcat din Firebase:', progressData);
+            }
+          }
         } else {
           navigate('/courses');
         }
@@ -110,7 +133,7 @@ export default function CourseLearning() {
     };
 
     loadCourse();
-  }, [id, navigate]);
+  }, [id, navigate, user]);
 
   const handleLessonClick = (lessonIndex) => {
     const lesson = course.lessons[lessonIndex];
@@ -120,17 +143,47 @@ export default function CourseLearning() {
     }
   };
 
-  const markLessonComplete = (lessonIndex) => {
-    const newCompleted = new Set(completedLessons);
-    newCompleted.add(lessonIndex);
-    setCompletedLessons(newCompleted);
-    
-    // Deblochează următoarea lecție
-    if (lessonIndex < course.lessons.length - 1) {
-      const nextLesson = course.lessons[lessonIndex + 1];
-      if (!nextLesson.unlocked) {
-        nextLesson.unlocked = true;
+  const handleMarkLessonComplete = async (lessonIndex) => {
+    if (!user) {
+      console.error('Utilizatorul nu este conectat');
+      return;
+    }
+
+    try {
+      console.log('🔄 Marchez lecția ca completată:', lessonIndex);
+      
+      // Salvează progresul în Firebase
+      const success = await markLessonComplete(
+        user.id, 
+        course.id, 
+        course.title, 
+        lessonIndex, 
+        course.lessons.length
+      );
+
+      if (success) {
+        // Actualizează starea locală
+        const newCompleted = new Set(completedLessons);
+        newCompleted.add(lessonIndex);
+        setCompletedLessons(newCompleted);
+        
+        // Actualizează lecția în array-ul de lecții
+        const updatedLessons = [...course.lessons];
+        updatedLessons[lessonIndex].completed = true;
+        updatedLessons[lessonIndex].unlocked = true;
+        
+        // Deblochează următoarea lecție
+        if (lessonIndex < course.lessons.length - 1) {
+          updatedLessons[lessonIndex + 1].unlocked = true;
+        }
+        
+        setCourse({ ...course, lessons: updatedLessons });
+        
+        console.log('✅ Lecția a fost marcată ca completată în Firebase');
+        console.log('📈 Progres actualizat:', Math.round(((lessonIndex + 1) / course.lessons.length) * 100) + '%');
       }
+    } catch (error) {
+      console.error('❌ Eroare la marcarea lecției ca completată:', error);
     }
   };
 
@@ -336,7 +389,7 @@ export default function CourseLearning() {
               <div className="lesson-actions">
                 <button 
                   className="complete-btn"
-                  onClick={() => markLessonComplete(currentLesson)}
+                  onClick={() => handleMarkLessonComplete(currentLesson)}
                   disabled={course.lessons[currentLesson].completed}
                 >
                   {course.lessons[currentLesson].completed ? '✅ Completat' : '✓ Marchează ca Completat'}

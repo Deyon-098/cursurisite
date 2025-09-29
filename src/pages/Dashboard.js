@@ -94,6 +94,65 @@ export default function Dashboard() {
     }
   }, [user, authLoading, navigate]);
 
+  // Funcție pentru a reîncărca datele Dashboard-ului
+  const reloadDashboardData = async () => {
+    if (!user) return;
+
+    try {
+      await waitForFirebase();
+      
+      const { collection, getDocs, query, where } = window.firestoreFunctions;
+      const db = window.firebaseDB;
+
+      console.log('🔄 Reîncarc datele Dashboard pentru utilizatorul:', user.id);
+      
+      const [orders, allCourses, courseProgress, userActivity] = await Promise.all([
+        getUserOrders(user.id),
+        getCourses(),
+        // Încarcă progresul cursurilor
+        (async () => {
+          const progressRef = collection(db, 'courseProgress');
+          const progressQuery = query(progressRef, where('userId', '==', user.id));
+          const progressSnapshot = await getDocs(progressQuery);
+          return progressSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        })(),
+        // Încarcă activitatea utilizatorului
+        (async () => {
+          const activityRef = collection(db, 'userActivity');
+          const activityQuery = query(activityRef, where('userId', '==', user.id));
+          const activitySnapshot = await getDocs(activityQuery);
+          return activitySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        })()
+      ]);
+
+      // Extrage cursurile cumpărate din comenzi
+      const purchasedCourseIds = orders.flatMap(order => 
+        order.items.map(item => item.id)
+      );
+      
+      const purchasedCourses = allCourses.filter(course => 
+        purchasedCourseIds.includes(course.id)
+      );
+
+      // Generează analytics bazate pe datele reale
+      const realAnalytics = generateAnalytics(orders, courseProgress, userActivity);
+
+      setDashboardData({
+        orders: orders || [],
+        purchasedCourses: purchasedCourses || [],
+        courses: allCourses || [],
+        courseProgress: courseProgress || [],
+        userActivity: userActivity || [],
+        analytics: realAnalytics,
+        loading: false
+      });
+
+      console.log('✅ Datele Dashboard au fost reîncărcate cu succes');
+    } catch (error) {
+      console.error('❌ Eroare la reîncărcarea datelor dashboard:', error);
+    }
+  };
+
   // Încarcă datele dashboard-ului
   useEffect(() => {
     const loadDashboardData = async () => {
@@ -286,53 +345,29 @@ export default function Dashboard() {
             onClick={() => setActiveView('analytics')}
           >
             <span className="nav-icon">📈</span>
-            <span>Analytics</span>
+            <span>Progres</span>
           </button>
           
           <button 
-            className={`nav-item ${activeView === 'shared' ? 'active' : ''}`}
-            onClick={() => setActiveView('shared')}
-          >
-            <span className="nav-icon">👥</span>
-            <span>Partajate cu Mine</span>
-          </button>
-          
-          <button 
-            className={`nav-item ${activeView === 'recent' ? 'active' : ''}`}
-            onClick={() => setActiveView('recent')}
-          >
-            <span className="nav-icon">🕒</span>
-            <span>Recente</span>
-          </button>
-          
-          <button 
-            className={`nav-item ${activeView === 'starred' ? 'active' : ''}`}
-            onClick={() => setActiveView('starred')}
+            className={`nav-item ${activeView === 'favorites' ? 'active' : ''}`}
+            onClick={() => setActiveView('favorites')}
           >
             <span className="nav-icon">⭐</span>
             <span>Favorite</span>
           </button>
-          
-          <button 
-            className={`nav-item ${activeView === 'trash' ? 'active' : ''}`}
-            onClick={() => setActiveView('trash')}
-          >
-            <span className="nav-icon">🗑️</span>
-            <span>Coș de Gunoi</span>
-          </button>
         </nav>
         
         <div className="sidebar-storage">
-          <h4>DETALII PROGRES</h4>
+          <h4>PROGRES CURSURI</h4>
           <div className="storage-item">
-            <span className="storage-icon">📈</span>
-            <span>Progres</span>
+            <span className="storage-icon">📚</span>
+            <span>Cursuri Active</span>
           </div>
           <div className="storage-progress">
             <div className="progress-bar">
-              <div className="progress-fill" style={{ width: '68%' }}></div>
+              <div className="progress-fill" style={{ width: `${Math.min(100, (dashboardData.analytics.coursesProgress.filter(c => c.progress >= 95).length / Math.max(1, dashboardData.purchasedCourses.length)) * 100)}%` }}></div>
             </div>
-            <span>68% din 100% progres total</span>
+            <span>{dashboardData.analytics.coursesProgress.filter(c => c.progress >= 95).length} din {dashboardData.purchasedCourses.length} cursuri finalizate</span>
           </div>
           <div className="storage-details">
             <div className="storage-line">
@@ -344,9 +379,9 @@ export default function Dashboard() {
               <span>Finalizate: {dashboardData.analytics.coursesProgress.filter(c => c.progress >= 95).length}</span>
             </div>
           </div>
-          <button className="upgrade-btn">
-            ⭐ Upgrade la Premium
-          </button>
+          <Link to="/courses" className="upgrade-btn">
+            🚀 Explorează Cursuri
+          </Link>
         </div>
       </div>
 
@@ -358,11 +393,8 @@ export default function Dashboard() {
             <h1>
               {activeView === 'overview' && 'Dashboard'}
               {activeView === 'courses' && 'Cursurile Mele'}
-              {activeView === 'analytics' && 'Analytics'}
-              {activeView === 'shared' && 'Partajate cu Mine'}
-              {activeView === 'recent' && 'Recente'}
-              {activeView === 'starred' && 'Favorite'}
-              {activeView === 'trash' && 'Coș de Gunoi'}
+              {activeView === 'analytics' && 'Progres'}
+              {activeView === 'favorites' && 'Favorite'}
             </h1>
             <div className="breadcrumb">
               <span>📁 {user.name}</span>
@@ -370,6 +402,13 @@ export default function Dashboard() {
           </div>
           
           <div className="header-right">
+            <button 
+              className="btn secondary small"
+              onClick={reloadDashboardData}
+              style={{ marginRight: '1rem' }}
+            >
+              🔄 Reîncarcă
+            </button>
             <button className="header-btn">
               <span>📊</span>
             </button>
@@ -431,27 +470,47 @@ export default function Dashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {dashboardData.analytics.coursesProgress.map(course => (
-                    <tr key={course.id}>
-                      <td>
-                        <div className="file-cell">
-                          <span className="file-icon">📚</span>
-                          <span className="file-name">{course.title}</span>
-                        </div>
-                      </td>
-                      <td>
-                        <div className="owner-cell">
-                          <div className="owner-avatar">👨‍🏫</div>
-                        </div>
-                      </td>
-                      <td className="date-cell">{course.lastAccessed}</td>
-                      <td className="size-cell">{course.progress}%</td>
-                      <td className="size-cell">{course.timeSpent}</td>
-                      <td>
-                        <button className="more-btn">⋯</button>
-                      </td>
-                    </tr>
-                  ))}
+                  {dashboardData.purchasedCourses.map(course => {
+                    // Găsește progresul pentru acest curs
+                    const courseProgress = dashboardData.analytics.coursesProgress.find(cp => cp.courseId === course.id);
+                    const progress = courseProgress ? courseProgress.progress : 0;
+                    const timeSpent = courseProgress ? courseProgress.timeSpent || 0 : 0;
+                    const lastAccessed = courseProgress ? courseProgress.lastAccessed : null;
+                    
+                    return (
+                      <tr key={course.id}>
+                        <td>
+                          <div className="file-cell">
+                            <span className="file-icon">📚</span>
+                            <span className="file-name">{course.title}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="owner-cell">
+                            <div className="owner-avatar">👨‍🏫</div>
+                          </div>
+                        </td>
+                        <td className="date-cell">
+                          {lastAccessed ? 
+                            new Date(lastAccessed.seconds * 1000).toLocaleDateString('ro-RO') : 
+                            'Nu accesat'
+                          }
+                        </td>
+                        <td className="size-cell">
+                          <div className="progress-cell">
+                            <div className="progress-bar-small">
+                              <div className="progress-fill-small" style={{width: `${progress}%`}}></div>
+                            </div>
+                            <span>{progress}%</span>
+                          </div>
+                        </td>
+                        <td className="size-cell">{timeSpent}h</td>
+                        <td>
+                          <button className="more-btn">⋯</button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -467,87 +526,107 @@ export default function Dashboard() {
             
             {dashboardData.purchasedCourses.length > 0 ? (
               <div className={`courses-grid-professional ${dashboardData.purchasedCourses.length === 1 ? 'single-course' : ''}`}>
-                {dashboardData.purchasedCourses.map(course => (
-                  <div key={course.id} className="course-card-professional">
-                    {/* Badge pentru curs cumpărat */}
-                    <div className="course-badge purchased">
-                      <span className="badge-icon">✅</span>
-                      <span className="badge-text">Cumpărat</span>
-                    </div>
-                    
-                    <div className="course-image-container">
-                      <img src={course.image} alt={course.title} className="course-image" />
-                      <div className="course-overlay">
-                        <button className="play-btn">
-                          <span className="play-icon">▶</span>
-                        </button>
-                        <div className="course-progress">
-                          <div className="progress-bar">
-                            <div className="progress-fill" style={{width: '0%'}}></div>
+                {dashboardData.purchasedCourses.map(course => {
+                  // Găsește progresul pentru acest curs
+                  const courseProgress = dashboardData.analytics.coursesProgress.find(cp => cp.courseId === course.id);
+                  const progress = courseProgress ? courseProgress.progress : 0;
+                  const timeSpent = courseProgress ? courseProgress.timeSpent || 0 : 0;
+                  const lastAccessed = courseProgress ? courseProgress.lastAccessed : null;
+                  
+                  return (
+                    <div key={course.id} className="course-card-professional">
+                      {/* Badge pentru curs cumpărat */}
+                      <div className="course-badge purchased">
+                        <span className="badge-icon">✅</span>
+                        <span className="badge-text">Cumpărat</span>
+                      </div>
+                      
+                      <div className="course-image-container">
+                        <img src={course.image} alt={course.title} className="course-image" />
+                        <div className="course-overlay">
+                          <button className="play-btn">
+                            <span className="play-icon">▶</span>
+                          </button>
+                          <div className="course-progress">
+                            <div className="progress-bar">
+                              <div className="progress-fill" style={{width: `${progress}%`}}></div>
+                            </div>
+                            <span className="progress-text">{progress}% completat</span>
                           </div>
-                          <span className="progress-text">0% completat</span>
+                        </div>
+                      </div>
+                      
+                      <div className="course-content">
+                        <div className="course-header">
+                          <h3 className="course-title">{course.title}</h3>
+                          <div className="course-rating">
+                            <span className="rating-stars">⭐</span>
+                            <span className="rating-value">{course.rating}</span>
+                          </div>
+                        </div>
+                        
+                        <p className="course-instructor">
+                          <span className="instructor-icon">👨‍🏫</span>
+                          {course.instructor}
+                        </p>
+                        
+                        <p className="course-description">{course.shortDescription}</p>
+                        
+                        <div className="course-meta">
+                          <div className="meta-item">
+                            <span className="meta-icon">🎯</span>
+                            <span className="meta-label">Nivel:</span>
+                            <span className="meta-value">{course.level}</span>
+                          </div>
+                          <div className="meta-item">
+                            <span className="meta-icon">⏱️</span>
+                            <span className="meta-label">Durată:</span>
+                            <span className="meta-value">{course.duration}h</span>
+                          </div>
+                          <div className="meta-item">
+                            <span className="meta-icon">📚</span>
+                            <span className="meta-label">Moduluri:</span>
+                            <span className="meta-value">{course.modules?.length || 0}</span>
+                          </div>
+                          <div className="meta-item">
+                            <span className="meta-icon">⏰</span>
+                            <span className="meta-label">Timp petrecut:</span>
+                            <span className="meta-value">{timeSpent}h</span>
+                          </div>
+                        </div>
+                        
+                        <div className="course-actions">
+                          {/* Butoane cu design nou - gradient verde pentru primary, glassmorphism pentru secondary */}
+                          <Link to={`/learn/${course.id}`} className="btn primary" style={{
+                            background: 'linear-gradient(135deg, #00ff88, #0099ff)',
+                            color: '#000',
+                            fontWeight: '600',
+                            padding: '0.5rem 1rem',
+                            borderRadius: '8px',
+                            textDecoration: 'none',
+                            boxShadow: '0 4px 16px rgba(0, 255, 136, 0.2)'
+                          }}>
+                            <span className="btn-icon">🚀</span>
+                            <span>{progress > 0 ? 'Continuă Cursul' : 'Începe Cursul'}</span>
+                          </Link>
+                          <Link to={`/course/${course.id}`} className="btn secondary" style={{
+                            background: 'rgba(255, 255, 255, 0.05)',
+                            color: '#ffffff',
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            fontWeight: '500',
+                            padding: '0.5rem 1rem',
+                            borderRadius: '8px',
+                            textDecoration: 'none',
+                            backdropFilter: 'blur(10px)'
+                          }}>
+                            <span className="btn-icon">📖</span>
+                            <span>Vezi Detalii</span>
+                          </Link>
                         </div>
                       </div>
                     </div>
-                    
-                    <div className="course-content">
-                      <div className="course-header">
-                        <h3 className="course-title">{course.title}</h3>
-                        <div className="course-rating">
-                          <span className="rating-stars">⭐</span>
-                          <span className="rating-value">{course.rating}</span>
-                        </div>
-                      </div>
-                      
-                      <p className="course-instructor">
-                        <span className="instructor-icon">👨‍🏫</span>
-                        {course.instructor}
-                      </p>
-                      
-                      <p className="course-description">{course.shortDescription}</p>
-                      
-                      <div className="course-meta">
-                        <div className="meta-item">
-                          <span className="meta-icon">🎯</span>
-                          <span className="meta-label">Nivel:</span>
-                          <span className="meta-value">{course.level}</span>
-                        </div>
-                        <div className="meta-item">
-                          <span className="meta-icon">⏱️</span>
-                          <span className="meta-label">Durată:</span>
-                          <span className="meta-value">{course.duration}h</span>
-                        </div>
-                        <div className="meta-item">
-                          <span className="meta-icon">📚</span>
-                          <span className="meta-label">Moduluri:</span>
-                          <span className="meta-value">{course.modules?.length || 0}</span>
-                        </div>
-                      </div>
-                      
-                      <div className="course-actions">
-                        <Link to={`/learn/${course.id}`} className="btn-primary">
-                          <span className="btn-icon">🚀</span>
-                          <span>Începe Cursul</span>
-                        </Link>
-                        <Link to={`/course/${course.id}`} className="btn-secondary">
-                          <span className="btn-icon">📖</span>
-                          <span>Vezi Detalii</span>
-                        </Link>
-                      </div>
-                      
-                      <div className="course-footer">
-                        <div className="course-status">
-                          <span className="status-icon">📅</span>
-                          <span className="status-text">Achiziționat recent</span>
-                        </div>
-                        <div className="course-access">
-                          <span className="access-icon">🔓</span>
-                          <span className="access-text">Acces complet</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="empty-courses">
@@ -566,19 +645,25 @@ export default function Dashboard() {
           <div className="analytics-content">
             <div className="analytics-grid">
               <div className="analytics-card">
-                <h3>📊 Vizualizări Pagini</h3>
+                <h3>📊 Statistici Generale</h3>
                 <div className="analytics-stats">
-                  {Object.entries(dashboardData.analytics.pageViews).map(([page, views]) => (
-                    <div key={page} className="stat-row">
-                      <span className="stat-label">{page}</span>
-                      <span className="stat-value">{views.toLocaleString()} vizualizări</span>
-                    </div>
-                  ))}
+                  <div className="stat-row">
+                    <span className="stat-label">Cursuri Cumpărate</span>
+                    <span className="stat-value">{dashboardData.purchasedCourses.length}</span>
+                  </div>
+                  <div className="stat-row">
+                    <span className="stat-label">Cursuri Finalizate</span>
+                    <span className="stat-value">{dashboardData.analytics.coursesProgress.filter(c => c.progress >= 95).length}</span>
+                  </div>
+                  <div className="stat-row">
+                    <span className="stat-label">Progres Mediu</span>
+                    <span className="stat-value">{dashboardData.analytics.coursesProgress.length > 0 ? Math.round(dashboardData.analytics.coursesProgress.reduce((sum, c) => sum + c.progress, 0) / dashboardData.analytics.coursesProgress.length) : 0}%</span>
+                  </div>
                 </div>
               </div>
               
               <div className="analytics-card">
-                <h3>📈 Statistici Luna Aceasta</h3>
+                <h3>📈 Progres Luna Aceasta</h3>
                 <div className="monthly-stats">
                   <div className="stat-item">
                     <span className="stat-number">{dashboardData.analytics.monthlyStats.coursesCompleted}</span>
@@ -602,43 +687,48 @@ export default function Dashboard() {
               <div className="analytics-card">
                 <h3>🔥 Activitate Recentă</h3>
                 <div className="activity-list">
-                  {dashboardData.analytics.recentActivity.map((activity, index) => (
-                    <div key={index} className="activity-item">
-                      <div className="activity-icon">
-                        {activity.type === 'course_progress' && '📖'}
-                        {activity.type === 'purchase' && '🛒'}
-                        {activity.type === 'certificate' && '🏆'}
+                  {dashboardData.analytics.recentActivity.length > 0 ? (
+                    dashboardData.analytics.recentActivity.map((activity, index) => (
+                      <div key={index} className="activity-item">
+                        <div className="activity-icon">
+                          {activity.type === 'course_progress' && '📖'}
+                          {activity.type === 'purchase' && '🛒'}
+                          {activity.type === 'certificate' && '🏆'}
+                        </div>
+                        <div className="activity-content">
+                          <div className="activity-course">{activity.course}</div>
+                          <div className="activity-action">{activity.action}</div>
+                        </div>
+                        <div className="activity-time">{activity.time}</div>
                       </div>
-                      <div className="activity-content">
-                        <div className="activity-course">{activity.course}</div>
-                        <div className="activity-action">{activity.action}</div>
-                      </div>
-                      <div className="activity-time">{activity.time}</div>
+                    ))
+                  ) : (
+                    <div className="no-activity">
+                      <span className="no-activity-icon">📚</span>
+                      <p>Nu ai activitate recentă. Începe să înveți!</p>
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
             </div>
           </div>
         )}
 
-
-        {/* Other views placeholder */}
-        {['shared', 'recent', 'starred', 'trash'].includes(activeView) && (
-          <div className="placeholder-content">
-            <div className="placeholder-icon">
-              {activeView === 'shared' && '👥'}
-              {activeView === 'recent' && '🕒'}
-              {activeView === 'starred' && '⭐'}
-              {activeView === 'trash' && '🗑️'}
+        {activeView === 'favorites' && (
+          <div className="favorites-content">
+            <div className="favorites-header">
+              <h2>⭐ Cursuri Favorite</h2>
+              <p>Cursurile pe care le-ai marcat ca favorite</p>
             </div>
-            <h3>
-              {activeView === 'shared' && 'Cursuri Partajate'}
-              {activeView === 'recent' && 'Cursuri Accesate Recent'}
-              {activeView === 'starred' && 'Cursuri Favorite'}
-              {activeView === 'trash' && 'Cursuri Șterse'}
-            </h3>
-            <p>Această secțiune va fi implementată în viitor.</p>
+            
+            <div className="empty-favorites">
+              <div className="empty-icon">⭐</div>
+              <h3>Nu ai cursuri favorite încă</h3>
+              <p>Marchează cursurile ca favorite pentru acces rapid!</p>
+              <Link to="/courses" className="btn primary">
+                🚀 Explorează Cursurile
+              </Link>
+            </div>
           </div>
         )}
       </div>

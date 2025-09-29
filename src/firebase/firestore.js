@@ -320,3 +320,86 @@ export const addOrder = async (orderData) => {
     throw error;
   }
 };
+
+// =================== COURSE PROGRESS ===================
+
+// Funcție pentru a actualiza progresul unui curs
+export const updateCourseProgress = async (userId, courseId, courseTitle, progressData) => {
+  try {
+    await waitForFirebase();
+    
+    const { collection, doc, setDoc, serverTimestamp } = window.firestoreFunctions;
+    const db = window.firebaseDB;
+    
+    const progressRef = doc(db, 'courseProgress', `${userId}_${courseId}`);
+    
+    const progressUpdate = {
+      userId,
+      courseId,
+      courseTitle,
+      progress: progressData.progress,
+      timeSpent: progressData.timeSpent || 0,
+      completedLessons: progressData.completedLessons || [],
+      lastAccessed: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    };
+    
+    await setDoc(progressRef, progressUpdate, { merge: true });
+    
+    console.log('📈 Progres actualizat pentru cursul:', courseId, progressUpdate);
+    return true;
+  } catch (error) {
+    console.error('Eroare la actualizarea progresului:', error);
+    return false;
+  }
+};
+
+// Funcție pentru a obține progresul unui curs
+export const getCourseProgress = async (userId, courseId) => {
+  try {
+    await waitForFirebase();
+    
+    const { doc, getDoc } = window.firestoreFunctions;
+    const db = window.firebaseDB;
+    
+    const progressRef = doc(db, 'courseProgress', `${userId}_${courseId}`);
+    const progressDoc = await getDoc(progressRef);
+    
+    if (progressDoc.exists()) {
+      return progressDoc.data();
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Eroare la obținerea progresului:', error);
+    return null;
+  }
+};
+
+// Funcție pentru a marca o lecție ca completată
+export const markLessonComplete = async (userId, courseId, courseTitle, lessonIndex, totalLessons) => {
+  try {
+    const progressData = await getCourseProgress(userId, courseId);
+    
+    const completedLessons = progressData?.completedLessons || [];
+    if (!completedLessons.includes(lessonIndex)) {
+      completedLessons.push(lessonIndex);
+    }
+    
+    const progress = Math.round((completedLessons.length / totalLessons) * 100);
+    
+    const updateData = {
+      progress,
+      completedLessons,
+      timeSpent: (progressData?.timeSpent || 0) + 0.5 // Adaugă 30 min per lecție
+    };
+    
+    await updateCourseProgress(userId, courseId, courseTitle, updateData);
+    
+    console.log('✅ Lecție marcată ca completată:', lessonIndex, 'Progres:', progress + '%');
+    return true;
+  } catch (error) {
+    console.error('Eroare la marcarea lecției ca completată:', error);
+    return false;
+  }
+};

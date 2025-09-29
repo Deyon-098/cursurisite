@@ -3647,6 +3647,27 @@ html {
   color: var(--text-primary);
 }
 
+.progress-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.progress-bar-small {
+  width: 60px;
+  height: 6px;
+  background: var(--border-color);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-fill-small {
+  height: 100%;
+  background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
 /* Analytics Content */
 .analytics-content {
   padding: 32px;
@@ -7731,24 +7752,25 @@ html {
 
 /* Când avem doar un curs, limitează lățimea */
 .courses-grid-professional:has(.course-card-professional:only-child) {
-  grid-template-columns: minmax(380px, 500px);
+  grid-template-columns: minmax(320px, 400px);
   justify-content: center;
 }
 
 /* Fallback pentru browsere care nu suportă :has() */
 .courses-grid-professional.single-course {
-  grid-template-columns: minmax(380px, 500px);
+  grid-template-columns: minmax(320px, 400px);
   justify-content: center;
 }
 
 .course-card-professional {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
+  border-radius: 12px;
   overflow: hidden;
   position: relative;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   backdrop-filter: blur(10px);
+  max-width: 400px;
 }
 
 .course-card-professional:hover {
@@ -7793,7 +7815,7 @@ html {
 /* Container pentru imagine */
 .course-image-container {
   position: relative;
-  height: 200px;
+  height: 180px;
   overflow: hidden;
 }
 
@@ -7886,7 +7908,7 @@ html {
 
 /* Conținutul cardului */
 .course-content {
-  padding: 1.5rem;
+  padding: 1rem;
 }
 
 .course-header {
@@ -7897,8 +7919,8 @@ html {
 }
 
 .course-title {
-  font-size: 1.25rem;
-  font-weight: 700;
+  font-size: 1.1rem;
+  font-weight: 600;
   color: var(--text-primary);
   line-height: 1.3;
   margin: 0;
@@ -7940,9 +7962,9 @@ html {
 
 .course-description {
   color: var(--text-secondary);
-  font-size: 0.875rem;
-  line-height: 1.5;
-  margin-bottom: 1.5rem;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  margin-bottom: 0.75rem;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -7953,19 +7975,19 @@ html {
 .course-meta {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
 }
 
 .meta-item {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.875rem;
+  font-size: 0.75rem;
 }
 
 .meta-icon {
-  font-size: 1rem;
+  font-size: 0.875rem;
   width: 20px;
   text-align: center;
 }
@@ -7984,50 +8006,51 @@ html {
 /* Acțiuni */
 .course-actions {
   display: flex;
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
 }
 
-/* Legacy button classes - use .btn.primary and .btn.secondary instead */
-.btn-primary {
-  /* Inherits from unified .btn.primary */
-  flex: 1;
-  font-size: 0.875rem;
+/* Course card buttons - specific styling with higher specificity */
+.course-card-professional .course-actions .btn.primary {
+  background: linear-gradient(135deg, #00ff88, #0099ff) !important;
+  color: #000 !important;
+  border: none !important;
+  font-weight: 600 !important;
+  font-size: 0.8rem !important;
+  padding: 0.5rem 1rem !important;
+  border-radius: 8px !important;
+  transition: all 0.3s ease !important;
+  box-shadow: 0 4px 16px rgba(0, 255, 136, 0.2) !important;
+  text-decoration: none !important;
 }
 
-.btn-secondary {
-  /* Inherits from unified .btn.secondary */
-  flex: 1;
-  font-size: 0.875rem;
+.course-card-professional .course-actions .btn.primary:hover {
+  background: linear-gradient(135deg, #00e677, #0099ff) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 20px rgba(0, 255, 136, 0.3) !important;
+}
+
+.course-card-professional .course-actions .btn.secondary {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  font-weight: 500 !important;
+  font-size: 0.8rem !important;
+  padding: 0.5rem 1rem !important;
+  border-radius: 8px !important;
+  transition: all 0.3s ease !important;
+  backdrop-filter: blur(10px) !important;
+  text-decoration: none !important;
+}
+
+.course-card-professional .course-actions .btn.secondary:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: #00ff88 !important;
+  transform: translateY(-1px) !important;
 }
 
 .btn-icon {
   font-size: 1rem;
-}
-
-/* Footer card */
-.course-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.course-status, .course-access {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.75rem;
-  color: var(--text-muted);
-}
-
-.status-icon, .access-icon {
-  font-size: 0.875rem;
-}
-
-.status-text, .access-text {
-  font-weight: 500;
 }
 
 /* Responsive */
