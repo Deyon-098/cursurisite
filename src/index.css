@@ -26,16 +26,53 @@
   transition: transform 0.3s ease;
 }
 
-/* Animații pentru butoane */
+/* ===== UNIFIED BUTTON SYSTEM ===== */
+
+/* Base Button Styles - All buttons inherit from this */
+.btn,
 .purchase-button,
 .back-button,
-.btn {
-  transition: all 0.3s ease;
+button {
+  /* Layout */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  
+  /* Spacing */
+  padding: 12px 24px;
+  margin: 0;
+  
+  /* Typography */
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+  
+  /* Visual */
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  outline: none;
+  
+  /* Transitions */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Prevent text selection */
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
+/* Button Hover Effects */
+.btn:hover,
 .purchase-button:hover,
 .back-button:hover,
-.btn:hover {
+button:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
 }
@@ -151,8 +188,42 @@ html {
     margin-left: 80px;
   }
   
+  .desktop-nav {
+    gap: 24px; /* Reduced for medium screens */
+  }
+  
+  .nav-primary {
+    gap: 24px;
+  }
+  
+  .nav-primary .nav-link {
+    padding: 10px 16px;
+    font-size: 15px;
+  }
+  
   .nav-secondary {
-    gap: 16px;
+    gap: 12px;
+  }
+  
+  .nav-secondary .btn.primary,
+  .nav-secondary .cart-link {
+    padding: 10px 18px;
+    font-size: 14px;
+  }
+  
+  .user-info {
+    padding: 6px 12px;
+    gap: 8px;
+  }
+  
+  .user-info .welcome {
+    font-size: 13px;
+  }
+  
+  .nav-secondary .btn.secondary {
+    padding: 6px 12px;
+    font-size: 13px;
+    box-shadow: 0 3px 12px rgba(0, 255, 136, 0.2);
   }
 }
 
@@ -162,15 +233,41 @@ html {
   }
   
   .desktop-nav {
-    gap: 32px;
+    gap: 16px; /* Further reduced for smaller screens */
   }
   
   .nav-primary {
-    gap: 24px;
+    gap: 20px; /* Reduced for better fit */
+  }
+  
+  .nav-primary .nav-link {
+    padding: 8px 14px;
+    font-size: 14px;
   }
   
   .nav-secondary {
-    gap: 12px;
+    gap: 10px; /* Tight spacing for small screens */
+  }
+  
+  .nav-secondary .btn.primary,
+  .nav-secondary .cart-link {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+  
+  .user-info {
+    padding: 6px 10px;
+    gap: 6px;
+  }
+  
+  .user-info .welcome {
+    font-size: 12px;
+  }
+  
+  .nav-secondary .btn.secondary {
+    padding: 6px 10px;
+    font-size: 12px;
+    box-shadow: 0 2px 8px rgba(0, 255, 136, 0.2);
   }
 }
 
@@ -219,55 +316,130 @@ html {
   transform: rotate(-45deg) translate(7px, -6px);
 }
 
-/* Desktop Navigation */
+/* Desktop Navigation - Improved Design */
 .desktop-nav {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  gap: 48px;
+  gap: 40px; /* Balanced spacing */
 }
 
-/* Primary Navigation (Home, Courses, Contact) */
+/* Primary Navigation - Left side */
 .nav-primary {
   display: flex;
   align-items: center;
   gap: 32px;
 }
 
-/* Secondary Navigation (User actions, Cart) */
+.nav-primary .nav-link {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 16px;
+  padding: 12px 20px;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  position: relative;
+  background: transparent;
+}
+
+.nav-primary .nav-link:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-1px);
+}
+
+.nav-primary .nav-link.active {
+  color: var(--accent-green);
+  background: rgba(0, 255, 136, 0.1);
+  border: 1px solid rgba(0, 255, 136, 0.2);
+  font-weight: 600;
+}
+
+/* Secondary Navigation - Right side */
 .nav-secondary {
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 16px;
+  min-width: fit-content;
 }
 
-/* Welcome message styling */
-.nav-secondary .welcome {
-  color: var(--text-secondary);
+/* User info container for logged-in state */
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 8px 16px;
+  backdrop-filter: blur(10px);
+}
+
+.user-info .welcome {
+  color: var(--text-primary);
   font-size: 14px;
   font-weight: 500;
-  padding: 8px 12px;
-  background: rgba(0, 255, 136, 0.05);
-  border: 1px solid rgba(0, 255, 136, 0.1);
-  border-radius: 8px;
   white-space: nowrap;
 }
 
-/* Cart link special styling */
-.nav-secondary .cart-link {
-  background: var(--glass-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 10px;
+/* Logout button styling - same as login button */
+.nav-secondary .btn.secondary {
+  background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
+  color: #000;
+  border: none;
   padding: 8px 16px;
   font-weight: 600;
+  font-size: 14px;
+  border-radius: 8px;
   transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(0, 255, 136, 0.2);
+}
+
+.nav-secondary .btn.secondary:hover {
+  background: linear-gradient(135deg, #00e677, #0099ff);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(0, 255, 136, 0.3);
+}
+
+/* Login button styling - Enhanced */
+.nav-secondary .btn.primary {
+  background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
+  color: #000;
+  border: none;
+  padding: 12px 24px;
+  font-weight: 600;
+  font-size: 15px;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(0, 255, 136, 0.2);
+}
+
+.nav-secondary .btn.primary:hover {
+  background: linear-gradient(135deg, #00e677, #0099ff);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 255, 136, 0.3);
+}
+
+/* Cart link styling - Enhanced */
+.nav-secondary .cart-link {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 12px 20px;
+  font-weight: 600;
+  font-size: 15px;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  color: var(--text-primary);
 }
 
 .nav-secondary .cart-link:hover {
   background: rgba(0, 255, 136, 0.1);
   border-color: var(--accent-green);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 255, 136, 0.2);
 }
 
 /* Mobile Navigation */
@@ -499,19 +671,7 @@ html {
   margin-bottom: 48px;
 }
 
-.btn {
-  padding: 16px 32px;
-  border-radius: 12px;
-  font-weight: 600;
-  font-size: 16px;
-  text-decoration: none;
-  border: none;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-}
-
+/* Primary Button Styles */
 .btn.primary {
   background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
   color: #000;
@@ -519,19 +679,135 @@ html {
 }
 
 .btn.primary:hover {
+  background: linear-gradient(135deg, #00e677, #0099ff);
   transform: translateY(-2px);
   box-shadow: 0 12px 40px rgba(0, 255, 136, 0.4);
 }
 
+/* Secondary Button Styles */
+.btn.secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+.btn.secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+/* Ghost Button Styles */
 .btn.ghost {
   background: var(--glass-bg);
   color: var(--text-primary);
   border: 1px solid var(--glass-border);
+  backdrop-filter: blur(10px);
 }
 
 .btn.ghost:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 255, 136, 0.1);
+  border-color: var(--accent-green);
   transform: translateY(-2px);
+}
+
+/* Button Size Variations */
+.btn.small {
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.btn.large {
+  padding: 18px 36px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.btn.extra-large {
+  padding: 24px 48px;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+/* Button States */
+.btn:disabled,
+.btn.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+  pointer-events: none;
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(0px);
+  transition: transform 0.1s ease;
+}
+
+/* Button with Icons */
+.btn .btn-icon {
+  font-size: 1em;
+  line-height: 1;
+}
+
+/* Full Width Buttons */
+.btn.full-width {
+  width: 100%;
+  justify-content: center;
+}
+
+/* Special Button Variants */
+.btn.rounded {
+  border-radius: 50px;
+}
+
+.btn.square {
+  border-radius: 4px;
+}
+
+.btn.no-shadow {
+  box-shadow: none !important;
+}
+
+.btn.no-transform:hover {
+  transform: none !important;
+}
+
+/* Copy Button Styles */
+.copy-btn {
+  padding: 4px 8px;
+  font-size: 12px;
+  min-width: 32px;
+  min-height: 32px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.copy-btn:hover {
+  background: rgba(0, 255, 136, 0.2);
+  border-color: var(--accent-green);
+}
+
+/* Quantity Control Buttons */
+.qty-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  font-size: 18px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+}
+
+.qty-btn:hover {
+  background: rgba(0, 255, 136, 0.2);
+  border-color: var(--accent-green);
 }
 
 /* Geometric Elements */
@@ -765,10 +1041,7 @@ html {
   gap: 12px;
 }
 
-.btn.small {
-  padding: 10px 20px;
-  font-size: 14px;
-}
+/* Button small size already defined in unified system */
 
 /* Courses Page */
 .courses-header {
@@ -1247,35 +1520,9 @@ html {
   margin-bottom: 40px;
 }
 
-.btn.large {
-  padding: 20px 40px;
-  font-size: 18px;
-  font-weight: 600;
-}
+/* Button large size already defined in unified system */
 
-.cta-actions .btn.primary {
-  background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
-  color: #000;
-  box-shadow: 0 8px 32px rgba(0, 255, 136, 0.3);
-}
-
-.cta-actions .btn.primary:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 40px rgba(0, 255, 136, 0.4);
-}
-
-.cta-actions .btn.ghost {
-  background: var(--glass-bg);
-  color: var(--text-primary);
-  border: 1px solid var(--glass-border);
-  backdrop-filter: blur(20px);
-}
-
-.cta-actions .btn.ghost:hover {
-  background: rgba(0, 255, 136, 0.1);
-  border-color: var(--accent-green);
-  transform: translateY(-3px);
-}
+/* CTA Actions use the unified button system */
 
 .cta-features {
   display: flex;
@@ -1691,7 +1938,7 @@ html {
   .btn {
     width: 100%;
     max-width: 300px;
-    text-align: center;
+    min-height: 48px; /* Better touch target */
   }
   
   .section-title {
@@ -1956,6 +2203,7 @@ html {
   .btn {
     padding: 16px 24px;
     font-size: 16px;
+    min-height: 48px;
   }
   
   .section-title {
@@ -2086,10 +2334,10 @@ html {
   }
   
   .btn.small {
-    padding: 8px 12px;
-    font-size: 12px;
+    padding: 10px 16px;
+    font-size: 14px;
     flex: 1;
-    text-align: center;
+    min-height: 44px;
   }
   
   /* Stats Mobile */
@@ -2139,8 +2387,9 @@ html {
   }
 
   .btn.large {
-    padding: 16px 24px;
-    font-size: 16px;
+    padding: 18px 32px;
+    font-size: 18px;
+    min-height: 52px;
   }
 
   .cta-features {
@@ -2257,6 +2506,7 @@ html {
   .btn {
     padding: 14px 20px;
     font-size: 15px;
+    min-height: 46px;
   }
   
   .course-card {
@@ -2294,8 +2544,9 @@ html {
   }
   
   .btn.small {
-    padding: 6px 10px;
-    font-size: 11px;
+    padding: 8px 12px;
+    font-size: 13px;
+    min-height: 40px;
   }
   
   .courses-grid {
@@ -2408,8 +2659,7 @@ html {
   pointer-events: none;
 }
 
-/* Touch-friendly elements */
-.btn,
+/* Touch-friendly elements - minimum touch targets */
 .main-nav a,
 .search-input,
 .level-select,
@@ -2422,6 +2672,8 @@ html {
   min-height: 44px; /* Apple's recommended minimum touch target size */
   min-width: 44px;
 }
+
+/* Buttons already have min-height defined in unified system */
 
 /* Focus states for accessibility */
 .btn:focus,
@@ -2611,28 +2863,7 @@ html {
   font-size: 16px;
 }
 
-.btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none !important;
-}
-
-.btn.large {
-  padding: 20px 32px;
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.btn.primary {
-  background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
-  color: #000;
-  box-shadow: 0 8px 32px rgba(0, 255, 136, 0.3);
-}
-
-.btn.primary:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 40px rgba(0, 255, 136, 0.4);
-}
+/* Duplicate button styles removed - using unified system */
 
 /* Cart Page */
 .cart-page {
@@ -2920,16 +3151,7 @@ html {
 
 .video-actions .btn {
   min-width: 120px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: all 0.3s ease;
-}
-
-.video-actions .btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 255, 136, 0.3);
+  /* Other styles inherited from unified button system */
 }
 
 @media (max-width: 768px) {
@@ -2944,6 +3166,7 @@ html {
   .video-actions .btn {
     min-width: 100px;
     font-size: 14px;
+    min-height: 44px;
   }
 }
 
@@ -4044,6 +4267,7 @@ html {
 .action-buttons .btn {
   flex: 1;
   min-width: 140px;
+  /* Other styles inherited from unified button system */
 }
 
 .debug-card {
@@ -5203,8 +5427,9 @@ html {
   }
   
   .btn.large {
-    padding: 18px 24px;
-    font-size: 16px;
+    padding: 18px 28px;
+    font-size: 17px;
+    min-height: 50px;
   }
   
   /* Course Details Mobile */
@@ -5524,23 +5749,17 @@ html {
 }
 
 .back-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
+  /* Uses unified button system with custom transform */
   color: #ffffff;
-  text-decoration: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 12px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: all 0.3s ease;
   font-weight: 500;
 }
 
 .back-button:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.15);
   border-color: var(--accent-green);
-  transform: translateX(-4px);
+  transform: translateX(-4px) translateY(-2px);
 }
 
 .back-icon {
@@ -5810,25 +6029,16 @@ html {
 }
 
 .purchase-button {
+  /* Uses unified button system with custom width and gradient */
   width: 100%;
-  padding: 1rem 2rem;
   background: linear-gradient(135deg, var(--accent-green) 0%, #00d4aa 100%);
   color: #000;
-  border: none;
-  border-radius: 12px;
   font-size: 1.1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
   margin-bottom: 1rem;
 }
 
 .purchase-button:hover {
-  transform: translateY(-2px);
+  background: linear-gradient(135deg, #00e677 0%, #00c499 100%);
   box-shadow: 0 10px 25px rgba(0, 255, 136, 0.3);
 }
 
@@ -7778,43 +7988,17 @@ html {
   margin-bottom: 1.5rem;
 }
 
-.btn-primary, .btn-secondary {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  text-decoration: none;
-  transition: all 0.3s ease;
-  border: none;
-  cursor: pointer;
-}
-
+/* Legacy button classes - use .btn.primary and .btn.secondary instead */
 .btn-primary {
-  background: linear-gradient(135deg, var(--accent-green) 0%, #00d4aa 100%);
-  color: #000;
-}
-
-.btn-primary:hover {
-  background: linear-gradient(135deg, #00e677 0%, #00c499 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0, 255, 136, 0.3);
+  /* Inherits from unified .btn.primary */
+  flex: 1;
+  font-size: 0.875rem;
 }
 
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--text-primary);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.3);
-  transform: translateY(-2px);
+  /* Inherits from unified .btn.secondary */
+  flex: 1;
+  font-size: 0.875rem;
 }
 
 .btn-icon {
@@ -7866,5 +8050,59 @@ html {
     flex-direction: column;
     gap: 0.5rem;
     align-items: flex-start;
+  }
+}
+
+/* ===== COMPACT NAVIGATION STYLES ===== */
+
+/* Compact Navigation Group */
+.nav-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.nav-group a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 15px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.nav-group a:hover {
+  color: var(--text-primary);
+  background: var(--glass-bg);
+}
+
+.nav-group a.active {
+  color: var(--accent-green);
+  background: rgba(0, 255, 136, 0.1);
+}
+
+/* Responsive adjustments for compact nav */
+@media (max-width: 1024px) {
+  .nav-group {
+    gap: 10px;
+  }
+  
+  .nav-group a {
+    padding: 6px 10px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 900px) {
+  .nav-group {
+    gap: 8px;
+  }
+  
+  .nav-group a {
+    padding: 6px 8px;
+    font-size: 13px;
   }
 }

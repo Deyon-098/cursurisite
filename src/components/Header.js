@@ -46,23 +46,27 @@ export default function Header() {
         {/* Desktop Navigation */}
         <div className="nav-container">
           <nav className="main-nav desktop-nav">
+            {/* Left side - Main navigation */}
             <div className="nav-primary">
-              <NavLink to="/" end>Home</NavLink>
-              <NavLink to="/courses">Courses</NavLink>
-              <NavLink to="/contact">Contact</NavLink>
+              <NavLink to="/" end className="nav-link">Home</NavLink>
+              <NavLink to="/courses" className="nav-link">Courses</NavLink>
+              <NavLink to="/contact" className="nav-link">Contact</NavLink>
             </div>
             
+            {/* Right side - User actions */}
             <div className="nav-secondary">
               {loading ? (
                 <span className="welcome">Se încarcă...</span>
               ) : user ? (
                 <>
-                  <NavLink to="/dashboard" className="btn ghost">📊 Dashboard</NavLink>
-                  <span className="welcome">Salut, {user.name}</span>
-                  <button className="btn ghost" onClick={logout}>Logout</button>
+                  <NavLink to="/dashboard" className="btn primary">📊 Dashboard</NavLink>
+                  <div className="user-info">
+                    <span className="welcome">Salut, {user.name}</span>
+                    <button className="btn secondary" onClick={logout}>Logout</button>
+                  </div>
                 </>
               ) : (
-                <NavLink to="/login">Login</NavLink>
+                <NavLink to="/login" className="btn primary">Login</NavLink>
               )}
               <NavLink to="/cart" className="cart-link">
                 🛒 Cart ({totals.count})
