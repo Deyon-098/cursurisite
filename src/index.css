@@ -1,6 +1,639 @@
 /* Modern Design System - Inspired by TECHCOMP */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
+/* =================== SUPER ADMIN COURSES MANAGEMENT =================== */
+
+/* Secțiunea de gestionare cursuri */
+.admin-courses-section {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.admin-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.admin-section-header h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.admin-section-header p {
+  color: var(--text-secondary);
+  margin: 0.5rem 0 0 0;
+}
+
+.admin-add-course-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.admin-add-course-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+}
+
+.admin-btn-icon {
+  font-size: 1.1rem;
+}
+
+/* Container pentru cursuri */
+.admin-courses-container {
+  margin-top: 2rem;
+}
+
+/* Grid pentru cursuri */
+.admin-courses-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+/* Card pentru curs */
+.admin-course-card {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 3px solid #94a3b8;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.admin-course-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+  border-color: var(--primary-color);
+  background: #e2e8f0;
+}
+
+/* Header card curs */
+.admin-course-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.admin-course-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.3;
+  flex: 1;
+  margin-right: 1rem;
+}
+
+.admin-course-status {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  align-items: flex-end;
+}
+
+.admin-status-published {
+  background: #10b981;
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.admin-status-draft {
+  background: #f59e0b;
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.admin-status-featured {
+  background: #8b5cf6;
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Informații curs */
+.admin-course-info {
+  margin-bottom: 1.5rem;
+}
+
+.admin-course-meta {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.admin-course-meta span {
+  background: #cbd5e1;
+  color: #0f172a;
+  padding: 0.5rem 0.9rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border: 2px solid #64748b;
+}
+
+.admin-course-description {
+  color: #1e293b;
+  font-size: 1rem;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-weight: 700;
+}
+
+/* Statistici curs */
+.admin-course-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.admin-course-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.admin-stat-label {
+  font-size: 0.75rem;
+  color: #475569;
+  margin-bottom: 0.4rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.admin-course-price {
+  font-weight: 700;
+  color: #065f46;
+  font-size: 1.1rem;
+  background: #a7f3d0;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border: 3px solid #059669;
+}
+
+.admin-course-students {
+  font-weight: 700;
+  color: #0f172a;
+  font-size: 1.1rem;
+  background: #cbd5e1;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border: 3px solid #475569;
+}
+
+.admin-course-rating {
+  font-weight: 700;
+  color: #92400e;
+  font-size: 1.1rem;
+  background: #fde68a;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border: 3px solid #f59e0b;
+}
+
+/* Acțiuni curs */
+.admin-course-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.admin-edit-btn,
+.admin-delete-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.5rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid;
+}
+
+.admin-edit-btn {
+  background: #e0e7ff;
+  color: #1e293b;
+  border-color: #4f46e5;
+}
+
+.admin-edit-btn:hover {
+  background: var(--primary-color);
+  color: #ffffff;
+  border-color: var(--primary-color);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.5);
+}
+
+.admin-delete-btn {
+  background: #fecaca;
+  color: #7f1d1d;
+  border-color: #dc2626;
+}
+
+.admin-delete-btn:hover {
+  background: #dc2626;
+  color: #ffffff;
+  border-color: #991b1b;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(220, 38, 38, 0.5);
+}
+
+/* Empty state */
+.admin-empty-state {
+  text-align: center;
+  padding: 3rem 2rem;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  border: 2px dashed var(--border-color);
+}
+
+.admin-empty-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.admin-empty-state h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.admin-empty-state p {
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
+}
+
+.admin-primary-btn {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.admin-primary-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+}
+
+/* Modal pentru cursuri */
+.admin-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+  backdrop-filter: blur(4px);
+  animation: modalFadeIn 0.3s ease-out;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+  }
+  to {
+    opacity: 1;
+    backdrop-filter: blur(4px);
+  }
+}
+
+.admin-modal {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 700px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+  border: 3px solid var(--primary-color);
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.admin-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2rem;
+  border-bottom: 2px solid var(--primary-color);
+  background: linear-gradient(135deg, #334155, #1e293b);
+  border-radius: 16px 16px 0 0;
+}
+
+.admin-modal-header h2 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.admin-modal-header h2::before {
+  content: "📚";
+  font-size: 1.5rem;
+}
+
+.admin-modal-close {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  font-size: 1.25rem;
+  color: #dc2626;
+  cursor: pointer;
+  padding: 0.75rem;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+}
+
+.admin-modal-close:hover {
+  background: #dc2626;
+  color: white;
+  transform: scale(1.05);
+}
+
+/* Formular modal */
+.admin-modal-form {
+  padding: 2rem;
+  background: #0f172a;
+}
+
+.admin-form-group {
+  margin-bottom: 1.75rem;
+}
+
+.admin-form-group label {
+  display: block;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
+  position: relative;
+}
+
+.admin-form-group label::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
+  transition: width 0.3s ease;
+}
+
+.admin-form-group:focus-within label::after {
+  width: 30px;
+}
+
+.admin-form-group input,
+.admin-form-group textarea,
+.admin-form-group select {
+  width: 100%;
+  padding: 1.1rem;
+  border: 3px solid #64748b;
+  border-radius: 10px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  background: #334155;
+  font-family: inherit;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.admin-form-group input:focus,
+.admin-form-group textarea:focus,
+.admin-form-group select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  background: #475569;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.5);
+  transform: translateY(-2px);
+}
+
+.admin-form-group textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.admin-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.admin-form-checkboxes {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  padding: 1.5rem;
+  background: #1e293b;
+  border-radius: 12px;
+  border: 2px solid #475569;
+}
+
+.admin-form-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  position: relative;
+}
+
+.admin-form-checkbox input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--primary-color);
+  cursor: pointer;
+}
+
+.admin-form-checkbox label {
+  margin: 0;
+  font-weight: 700;
+  color: #e2e8f0;
+  cursor: pointer;
+  font-size: 0.95rem;
+  position: relative;
+  padding-left: 0.5rem;
+}
+
+.admin-form-checkbox label::before {
+  content: "";
+  position: absolute;
+  left: -1.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  border: 2px solid #d1d5db;
+  border-radius: 4px;
+  background: white;
+  transition: all 0.3s ease;
+}
+
+.admin-form-checkbox input[type="checkbox"]:checked + label::before {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.admin-form-checkbox input[type="checkbox"]:checked + label::after {
+  content: "✓";
+  position: absolute;
+  left: -1.3rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+/* Acțiuni modal */
+.admin-modal-actions {
+  display: flex;
+  gap: 1.5rem;
+  justify-content: flex-end;
+  padding: 2rem;
+  border-top: 2px solid var(--primary-color);
+  background: linear-gradient(135deg, #334155, #1e293b);
+  border-radius: 0 0 16px 16px;
+}
+
+.admin-cancel-btn {
+  background: #475569;
+  color: #e2e8f0;
+  border: 2px solid #64748b;
+  padding: 1rem 2rem;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.admin-cancel-btn:hover {
+  background: #64748b;
+  border-color: #d1d5db;
+  color: #374151;
+  transform: translateY(-1px);
+}
+
+.admin-save-btn {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.admin-save-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+}
+
+.admin-save-btn::before {
+  content: "💾";
+  font-size: 1rem;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .admin-courses-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .admin-section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .admin-form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .admin-form-checkboxes {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .admin-modal-actions {
+    flex-direction: column;
+  }
+}
+
 /* =================== GSAP ANIMATIONS =================== */
 
 /* Animații pentru elemente care vor fi animate cu GSAP */
@@ -17,6 +650,8 @@
   /* opacity: 0; */
   /* transform: translateY(50px); */
   /* Reguli comentate pentru a evita problemele de vizibilitate */
+  /* Stări inițiale pentru animații GSAP */
+  position: relative;
 }
 
 /* Animații pentru hover effects */
@@ -83,6 +718,8 @@ button:hover {
   /* opacity: 0; */
   /* transform: translateX(-50px); */
   /* Reguli comentate pentru a evita problemele de vizibilitate */
+  /* Stări inițiale pentru animații GSAP */
+  position: relative;
 }
 
 /* Animații pentru main content */
@@ -91,6 +728,8 @@ button:hover {
   /* opacity: 0; */
   /* transform: translateY(50px); */
   /* Reguli comentate pentru a evita problemele de vizibilitate */
+  /* Stări inițiale pentru animații GSAP */
+  position: relative;
 }
 
 * {
@@ -2312,6 +2951,7 @@ html {
     line-height: 1.4;
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
@@ -2537,6 +3177,7 @@ html {
     font-size: 12px;
     margin-bottom: 8px;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
   }
   
   .course-card-price {
@@ -7727,6 +8368,989 @@ html {
   }
 }
 
+/* =================== SUPER ADMIN LOGIN =================== */
+
+.admin-login-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-login-page::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="admin-login-pattern" width="40" height="40" patternUnits="userSpaceOnUse"><circle cx="20" cy="20" r="2" fill="rgba(255,0,136,0.1)"/><circle cx="0" cy="0" r="1" fill="rgba(0,255,136,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23admin-login-pattern)"/></svg>');
+  opacity: 0.3;
+  animation: float 20s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-20px) rotate(180deg); }
+}
+
+.admin-login-container {
+  width: 100%;
+  max-width: 450px;
+  position: relative;
+  z-index: 1;
+}
+
+.admin-login-card {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  border: 3px solid var(--primary-color);
+  border-radius: 24px;
+  padding: 3rem;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-login-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 0, 136, 0.1), rgba(0, 255, 136, 0.1));
+  opacity: 0.5;
+  z-index: -1;
+}
+
+.admin-login-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.admin-login-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.admin-login-icon {
+  font-size: 3rem;
+  background: linear-gradient(135deg, #ff0088, #00ff88);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.admin-login-logo h1 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin: 0;
+  color: #ffffff;
+  text-shadow: 0 2px 8px rgba(99, 102, 241, 0.5);
+}
+
+.admin-login-header p {
+  color: #cbd5e1;
+  font-size: 1.1rem;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+
+.admin-login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.admin-login-form input {
+  background: #334155;
+  border: 3px solid #64748b;
+  border-radius: 12px;
+  padding: 1.2rem 1.5rem;
+  color: #ffffff;
+  font-size: 1.1rem;
+  transition: all 0.3s ease;
+  font-weight: 700;
+}
+
+.admin-login-form input::placeholder {
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.admin-login-form input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  background: #475569;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.5);
+  transform: translateY(-2px);
+}
+
+.admin-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.admin-form-label {
+  color: #e0e0e0;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.admin-form-input {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 1rem 1.2rem;
+  color: #ffffff;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+.admin-form-input:focus {
+  border-color: #ff0088;
+  background: rgba(255, 0, 136, 0.1);
+  box-shadow: 0 0 20px rgba(255, 0, 136, 0.3);
+  transform: translateY(-2px);
+}
+
+.admin-form-input::placeholder {
+  color: #888;
+}
+
+.admin-login-error {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 0, 0, 0.1);
+  border: 1px solid rgba(255, 0, 0, 0.3);
+  border-radius: 8px;
+  padding: 0.8rem 1rem;
+  color: #ff6b6b;
+  font-weight: 600;
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+.admin-error-icon {
+  font-size: 1.2rem;
+}
+
+.admin-login-btn {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+  border: none;
+  border-radius: 12px;
+  padding: 1rem 2rem;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-login-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.admin-login-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4);
+}
+
+.admin-login-btn:hover::before {
+  left: 100%;
+}
+
+.admin-login-btn:active {
+  transform: translateY(-1px);
+}
+
+.admin-btn-icon {
+  font-size: 1.2rem;
+}
+
+.admin-login-footer {
+  text-align: center;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.admin-back-link {
+  color: #00ff88;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.admin-back-link:hover {
+  color: #00d4ff;
+  transform: translateX(-5px);
+}
+
+/* Responsive Design pentru Login */
+@media (max-width: 768px) {
+  .admin-login-page {
+    padding: 1rem;
+  }
+  
+  .admin-login-card {
+    padding: 2rem;
+  }
+  
+  .admin-login-logo h1 {
+    font-size: 2rem;
+  }
+  
+  .admin-login-icon {
+    font-size: 2.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-login-card {
+    padding: 1.5rem;
+  }
+  
+  .admin-login-logo {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .admin-login-logo h1 {
+    font-size: 1.8rem;
+  }
+}
+
+/* =================== SUPER ADMIN DASHBOARD =================== */
+
+.admin-dashboard {
+  max-width: 1200px;
+}
+
+.admin-dashboard-header {
+  text-align: center;
+  margin-bottom: 3rem;
+  padding: 2rem 0;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-dashboard-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 0, 136, 0.05), rgba(0, 255, 136, 0.05));
+  opacity: 0.5;
+  z-index: -1;
+}
+
+.admin-dashboard-header h1 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(135deg, #ff0088, #00ff88);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  position: relative;
+  z-index: 1;
+}
+
+.admin-dashboard-header p {
+  font-size: 1.2rem;
+  color: #b0b0b0;
+  margin: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.admin-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.admin-stat-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 2rem;
+  backdrop-filter: blur(20px);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 0, 136, 0.1), rgba(0, 255, 136, 0.1));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: -1;
+}
+
+.admin-stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 0, 136, 0.3);
+}
+
+.admin-stat-card:hover::before {
+  opacity: 1;
+}
+
+.admin-stat-card {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.admin-stat-icon {
+  font-size: 3rem;
+  min-width: 80px;
+  text-align: center;
+  background: linear-gradient(135deg, #ff0088, #00ff88);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.admin-stat-content {
+  flex: 1;
+}
+
+.admin-stat-number {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 0.5rem;
+  line-height: 1;
+}
+
+.admin-stat-label {
+  font-size: 1rem;
+  color: #e0e0e0;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.admin-stat-trend {
+  font-size: 0.9rem;
+  color: #00ff88;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.admin-stat-trend::before {
+  content: '📈';
+  font-size: 0.8rem;
+}
+
+.admin-loading {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+}
+
+.admin-loading-spinner {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.admin-loading p {
+  color: #b0b0b0;
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.admin-popular-courses {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 2rem;
+  backdrop-filter: blur(20px);
+}
+
+.admin-popular-courses h2 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 2rem;
+  color: #ffffff;
+  background: linear-gradient(135deg, #ff0088, #00ff88);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-align: center;
+}
+
+.admin-courses-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.admin-course-item {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-course-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(180deg, #ff0088, #00ff88);
+  transform: scaleY(0);
+  transition: transform 0.3s ease;
+}
+
+.admin-course-item:hover {
+  background: rgba(255, 0, 136, 0.1);
+  border-color: rgba(255, 0, 136, 0.3);
+  transform: translateX(5px);
+}
+
+.admin-course-item:hover::before {
+  transform: scaleY(1);
+}
+
+.admin-course-rank {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #ff0088;
+  min-width: 40px;
+  text-align: center;
+  background: rgba(255, 0, 136, 0.1);
+  border-radius: 8px;
+  padding: 0.5rem;
+}
+
+.admin-course-info {
+  flex: 1;
+}
+
+.admin-course-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 0.5rem;
+}
+
+.admin-course-meta {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.9rem;
+  color: #b0b0b0;
+}
+
+.admin-course-rating {
+  color: #ffd700;
+  font-weight: 600;
+}
+
+.admin-course-students {
+  color: #00ff88;
+  font-weight: 600;
+}
+
+.admin-course-price {
+  color: #00d4ff;
+  font-weight: 600;
+}
+
+.admin-course-progress {
+  min-width: 200px;
+  text-align: right;
+}
+
+.admin-progress-bar {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.admin-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ff0088, #00ff88);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.admin-progress-text {
+  font-size: 0.8rem;
+  color: #b0b0b0;
+  font-weight: 600;
+}
+
+/* Responsive Design pentru Dashboard */
+@media (max-width: 1024px) {
+  .admin-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .admin-course-item {
+    flex-direction: column;
+    text-align: center;
+    gap: 1rem;
+  }
+  
+  .admin-course-progress {
+    min-width: auto;
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .admin-stat-card {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .admin-course-meta {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-dashboard-header h1 {
+    font-size: 2rem;
+  }
+  
+  .admin-stat-number {
+    font-size: 2rem;
+  }
+  
+  .admin-course-title {
+    font-size: 1rem;
+  }
+}
+
+/* =================== SUPER ADMIN PAGE =================== */
+
+.super-admin-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+  color: #ffffff;
+  font-family: 'Inter', sans-serif;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-header {
+  background: linear-gradient(135deg, rgba(255, 0, 136, 0.1), rgba(0, 255, 136, 0.1));
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1.5rem 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="admin-dots" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1" fill="rgba(255,0,136,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23admin-dots)"/></svg>');
+  opacity: 0.3;
+}
+
+.admin-header-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 60px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+
+.admin-logo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.admin-icon {
+  font-size: 2.5rem;
+  background: linear-gradient(135deg, #ff0088, #00ff88);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.admin-title h1 {
+  font-size: 1.8rem;
+  font-weight: 800;
+  margin: 0;
+  background: linear-gradient(135deg, #ff0088, #00ff88);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.admin-title p {
+  font-size: 0.9rem;
+  color: #b0b0b0;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.admin-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #00ff88;
+  text-decoration: none;
+  font-weight: 600;
+  padding: 0.8rem 1.5rem;
+  border: 1px solid rgba(0, 255, 136, 0.3);
+  border-radius: 12px;
+  background: rgba(0, 255, 136, 0.1);
+  transition: all 0.3s ease;
+}
+
+.admin-back-btn:hover {
+  background: rgba(0, 255, 136, 0.2);
+  transform: translateX(-5px);
+  box-shadow: 0 5px 20px rgba(0, 255, 136, 0.3);
+}
+
+.admin-layout {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.admin-sidebar {
+  width: 280px;
+  background: rgba(255, 255, 255, 0.03);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  padding: 2rem 0;
+  overflow-y: auto;
+}
+
+.admin-nav-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.admin-nav-item {
+  margin-bottom: 0.5rem;
+}
+
+.admin-nav-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  background: transparent;
+  border: none;
+  color: #e0e0e0;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-nav-btn::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(180deg, #ff0088, #00ff88);
+  transform: scaleY(0);
+  transition: transform 0.3s ease;
+}
+
+.admin-nav-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+  transform: translateX(5px);
+}
+
+.admin-nav-btn.active {
+  background: rgba(255, 0, 136, 0.1);
+  color: #ff0088;
+  border-right: 3px solid #ff0088;
+}
+
+.admin-nav-btn.active::before {
+  transform: scaleY(1);
+}
+
+.admin-nav-icon {
+  font-size: 1.5rem;
+  min-width: 30px;
+  text-align: center;
+}
+
+.admin-nav-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.admin-nav-title {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.admin-nav-desc {
+  font-size: 0.8rem;
+  color: #b0b0b0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.admin-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.admin-main-content {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+.admin-content {
+  max-width: 1000px;
+}
+
+.welcome-section {
+  text-align: center;
+  padding: 3rem 0;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  position: relative;
+  overflow: hidden;
+}
+
+.welcome-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 0, 136, 0.05), rgba(0, 255, 136, 0.05));
+  opacity: 0.5;
+}
+
+.welcome-section h1 {
+  font-size: 3rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  background: linear-gradient(135deg, #ff0088, #00ff88);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  position: relative;
+  z-index: 1;
+}
+
+.welcome-section p {
+  font-size: 1.2rem;
+  color: #b0b0b0;
+  margin: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.admin-content h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: #ffffff;
+  background: linear-gradient(135deg, #ff0088, #00ff88);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.admin-content p {
+  font-size: 1.1rem;
+  color: #e0e0e0;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .admin-layout {
+    flex-direction: column;
+  }
+  
+  .admin-sidebar {
+    width: 100%;
+    padding: 1rem 0;
+  }
+  
+  .admin-nav-list {
+    display: flex;
+    overflow-x: auto;
+    gap: 1rem;
+    padding: 0 1rem;
+  }
+  
+  .admin-nav-item {
+    margin-bottom: 0;
+    min-width: 200px;
+  }
+  
+  .admin-main-content {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-header-content {
+    padding: 0 20px;
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+  
+  .admin-title h1 {
+    font-size: 1.5rem;
+  }
+  
+  .welcome-section h1 {
+    font-size: 2rem;
+  }
+  
+  .admin-nav-btn {
+    padding: 0.8rem 1rem;
+  }
+  
+  .admin-nav-content {
+    display: none;
+  }
+  
+  .admin-nav-icon {
+    font-size: 1.2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-header-content {
+    padding: 0 15px;
+  }
+  
+  .admin-main-content {
+    padding: 0.5rem;
+  }
+  
+  .welcome-section {
+    padding: 2rem 1rem;
+  }
+  
+  .welcome-section h1 {
+    font-size: 1.8rem;
+  }
+  
+  .welcome-section p {
+    font-size: 1rem;
+  }
+}
+
 /* =================== PROFESSIONAL COURSE CARDS =================== */
 
 .courses-grid-professional {
@@ -7980,6 +9604,7 @@ html {
   margin-bottom: 0.75rem;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }

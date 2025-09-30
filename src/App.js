@@ -15,6 +15,7 @@ import Dashboard from './pages/Dashboard';
 import DemoCards from './pages/DemoCards';
 import ManageCourses from './pages/ManageCourses';
 import CourseLearning from './pages/CourseLearning';
+import SuperAdmin from './pages/SuperAdmin';
 
 // Component pentru scroll la top la schimbarea rutei
 function ScrollToTop() {
@@ -44,12 +45,22 @@ function App() {
 function AppLayout() {
   const location = useLocation();
   const isDashboard = location.pathname === '/dashboard';
+  const isSuperAdmin = location.pathname === '/admindanu';
 
   if (isDashboard) {
     // Layout full-screen pentru Dashboard (fără Header/Footer)
     return (
       <Routes>
         <Route path="/dashboard" element={<Dashboard />} />
+      </Routes>
+    );
+  }
+
+  if (isSuperAdmin) {
+    // Layout full-screen pentru Super Admin (fără Header/Footer)
+    return (
+      <Routes>
+        <Route path="/admindanu" element={<SuperAdmin />} />
       </Routes>
     );
   }
