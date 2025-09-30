@@ -191,7 +191,7 @@ export const getUserOrders = async (userId) => {
     console.log('🔄 getUserOrders apelat pentru userId:', userId);
     await waitForFirebase();
     
-    const { collection, query, where, orderBy, getDocs } = window.firestoreFunctions;
+    const { collection, query, where, getDocs } = window.firestoreFunctions;
     const db = window.firebaseDB;
     
     const ordersRef = collection(db, 'orders');
@@ -326,12 +326,15 @@ export const addOrder = async (orderData) => {
 // Funcție pentru a actualiza progresul unui curs
 export const updateCourseProgress = async (userId, courseId, courseTitle, progressData) => {
   try {
+    console.log('🔄 updateCourseProgress apelat:', { userId, courseId, courseTitle, progressData });
+    
     await waitForFirebase();
     
-    const { collection, doc, setDoc, serverTimestamp } = window.firestoreFunctions;
+    const { doc, setDoc, serverTimestamp } = window.firestoreFunctions;
     const db = window.firebaseDB;
     
     const progressRef = doc(db, 'courseProgress', `${userId}_${courseId}`);
+    console.log('💾 Salvez progresul în documentul:', `${userId}_${courseId}`);
     
     const progressUpdate = {
       userId,
@@ -344,12 +347,16 @@ export const updateCourseProgress = async (userId, courseId, courseTitle, progre
       updatedAt: serverTimestamp()
     };
     
+    console.log('💾 Datele de salvat în Firebase:', progressUpdate);
+    console.log('💾 Lecții completate de salvat:', progressUpdate.completedLessons);
+    
     await setDoc(progressRef, progressUpdate, { merge: true });
     
-    console.log('📈 Progres actualizat pentru cursul:', courseId, progressUpdate);
+    console.log('✅ Progres salvat cu succes pentru cursul:', courseId);
+    console.log('✅ Lecții completate salvate:', progressUpdate.completedLessons);
     return true;
   } catch (error) {
-    console.error('Eroare la actualizarea progresului:', error);
+    console.error('❌ Eroare la actualizarea progresului:', error);
     return false;
   }
 };
@@ -357,21 +364,30 @@ export const updateCourseProgress = async (userId, courseId, courseTitle, progre
 // Funcție pentru a obține progresul unui curs
 export const getCourseProgress = async (userId, courseId) => {
   try {
+    console.log('🔄 getCourseProgress apelat:', { userId, courseId });
+    
     await waitForFirebase();
     
     const { doc, getDoc } = window.firestoreFunctions;
     const db = window.firebaseDB;
     
     const progressRef = doc(db, 'courseProgress', `${userId}_${courseId}`);
+    console.log('🔍 Caut progresul în documentul:', `${userId}_${courseId}`);
+    
     const progressDoc = await getDoc(progressRef);
     
     if (progressDoc.exists()) {
-      return progressDoc.data();
+      const data = progressDoc.data();
+      console.log('📊 Progres găsit în Firebase:', data);
+      console.log('📊 Lecții completate:', data.completedLessons);
+      console.log('📊 Progres procentual:', data.progress + '%');
+      return data;
     }
     
+    console.log('📊 Nu există progres pentru acest curs în Firebase');
     return null;
   } catch (error) {
-    console.error('Eroare la obținerea progresului:', error);
+    console.error('❌ Eroare la obținerea progresului:', error);
     return null;
   }
 };
@@ -379,27 +395,70 @@ export const getCourseProgress = async (userId, courseId) => {
 // Funcție pentru a marca o lecție ca completată
 export const markLessonComplete = async (userId, courseId, courseTitle, lessonIndex, totalLessons) => {
   try {
-    const progressData = await getCourseProgress(userId, courseId);
+    console.log('🔄 markLessonComplete apelat:', { userId, courseId, courseTitle, lessonIndex, totalLessons });
     
-    const completedLessons = progressData?.completedLessons || [];
+    const progressData = await getCourseProgress(userId, courseId);
+    console.log('📊 Progres existent:', progressData);
+    
+    let completedLessons = progressData?.completedLessons || [];
+    
+    // Verifică dacă lecția este deja completată
     if (!completedLessons.includes(lessonIndex)) {
       completedLessons.push(lessonIndex);
+      console.log('✅ Lecție adăugată la lista completată:', lessonIndex);
+    } else {
+      console.log('⚠️ Lecția era deja marcată ca completată:', lessonIndex);
+      return true; // Lecția era deja completată, nu face nimic
     }
     
-    const progress = Math.round((completedLessons.length / totalLessons) * 100);
+    // Filtrează lecțiile completate pentru a elimina duplicatele și lecțiile invalide
+    completedLessons = completedLessons.filter(index => index >= 0 && index < totalLessons);
+    
+    // Calculează progresul corect
+    const progress = Math.min(100, Math.round((completedLessons.length / totalLessons) * 100));
+    console.log('📈 Progres calculat:', progress + '%', `(${completedLessons.length}/${totalLessons})`);
     
     const updateData = {
       progress,
       completedLessons,
-      timeSpent: (progressData?.timeSpent || 0) + 0.5 // Adaugă 30 min per lecție
+      timeSpent: progressData?.timeSpent || 0 // Păstrează timpul real, nu adaugă artificial
+    };
+    
+    console.log('💾 Datele de actualizat:', updateData);
+    
+    await updateCourseProgress(userId, courseId, courseTitle, updateData);
+    
+    console.log('✅ Lecție marcată ca completată cu succes:', lessonIndex, 'Progres:', progress + '%');
+    return true;
+  } catch (error) {
+    console.error('❌ Eroare la marcarea lecției ca completată:', error);
+    return false;
+  }
+};
+
+// Funcție pentru a actualiza timpul petrecut în curs
+export const updateTimeSpent = async (userId, courseId, courseTitle, additionalMinutes) => {
+  try {
+    console.log('⏱️ updateTimeSpent apelat:', { userId, courseId, courseTitle, additionalMinutes });
+    
+    const progressData = await getCourseProgress(userId, courseId);
+    const currentTimeSpent = progressData?.timeSpent || 0;
+    const newTimeSpent = currentTimeSpent + additionalMinutes;
+    
+    console.log('⏱️ Timp actualizat:', currentTimeSpent, '→', newTimeSpent, 'minute');
+    
+    const updateData = {
+      progress: progressData?.progress || 0,
+      completedLessons: progressData?.completedLessons || [],
+      timeSpent: newTimeSpent
     };
     
     await updateCourseProgress(userId, courseId, courseTitle, updateData);
     
-    console.log('✅ Lecție marcată ca completată:', lessonIndex, 'Progres:', progress + '%');
+    console.log('✅ Timp actualizat cu succes pentru cursul:', courseId);
     return true;
   } catch (error) {
-    console.error('Eroare la marcarea lecției ca completată:', error);
+    console.error('❌ Eroare la actualizarea timpului:', error);
     return false;
   }
 };

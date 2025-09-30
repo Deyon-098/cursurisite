@@ -3419,24 +3419,10 @@ html {
 .header-right {
   display: flex;
   gap: 8px;
-}
-
-.header-btn {
-  width: 40px;
-  height: 40px;
-  border: none;
-  background: var(--glass-bg);
-  border-radius: 50%;
-  display: flex;
   align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
 }
 
-.header-btn:hover {
-  background: var(--border-color);
-}
+
 
 /* Dashboard Content */
 .dashboard-content-new {
@@ -3468,6 +3454,9 @@ html {
   padding: 20px;
   transition: all 0.2s ease;
   cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  display: block;
 }
 
 .quick-access-card:hover {
@@ -7742,24 +7731,40 @@ html {
 
 .courses-grid-professional {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
-  gap: 2rem;
-  padding: 2rem 0;
-  max-width: 1200px;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 1.5rem;
+  padding: 1.5rem 0;
+  max-width: 1400px;
   margin: 0 auto;
   justify-content: center;
 }
 
 /* Când avem doar un curs, limitează lățimea */
 .courses-grid-professional:has(.course-card-professional:only-child) {
-  grid-template-columns: minmax(320px, 400px);
+  grid-template-columns: minmax(300px, 380px);
   justify-content: center;
 }
 
 /* Fallback pentru browsere care nu suportă :has() */
 .courses-grid-professional.single-course {
-  grid-template-columns: minmax(320px, 400px);
+  grid-template-columns: minmax(300px, 380px);
   justify-content: center;
+}
+
+/* Layout optimizat pentru 2 cursuri */
+.courses-grid-professional.two-courses {
+  grid-template-columns: repeat(2, minmax(300px, 1fr));
+  gap: 1.5rem;
+  justify-content: center;
+  max-width: 800px;
+}
+
+/* Layout optimizat pentru 3 cursuri */
+.courses-grid-professional.three-courses {
+  grid-template-columns: repeat(3, minmax(280px, 1fr));
+  gap: 1.3rem;
+  justify-content: center;
+  max-width: 1000px;
 }
 
 .course-card-professional {
@@ -7770,7 +7775,8 @@ html {
   position: relative;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   backdrop-filter: blur(10px);
-  max-width: 400px;
+  max-width: 380px;
+  width: 100%;
 }
 
 .course-card-professional:hover {
@@ -7851,7 +7857,7 @@ html {
 }
 
 .course-card-professional:hover .course-overlay {
-  opacity: 1;
+  opacity: 1 !important;
 }
 
 .play-btn {
@@ -7866,17 +7872,22 @@ html {
   cursor: pointer;
   transition: all 0.3s ease;
   margin-bottom: 1rem;
+  text-decoration: none;
+  color: #000;
 }
 
 .play-btn:hover {
-  background: var(--accent-green);
+  background: rgba(0, 255, 136, 1);
   transform: scale(1.1);
+  color: #000;
+  text-decoration: none;
 }
 
 .play-icon {
   color: #000;
   font-size: 1.5rem;
   margin-left: 2px;
+  font-weight: bold;
 }
 
 /* Progres curs */
@@ -7896,14 +7907,16 @@ html {
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--accent-green) 0%, var(--accent-blue) 100%);
+  background: linear-gradient(90deg, #00ff88, #0099ff);
+  border-radius: 2px;
   transition: width 0.3s ease;
 }
 
 .progress-text {
-  color: #fff;
-  font-size: 0.875rem;
+  color: #ffffff;
+  font-size: 0.8rem;
   font-weight: 500;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 /* Conținutul cardului */
@@ -8054,15 +8067,24 @@ html {
 }
 
 /* Responsive */
+@media (max-width: 1200px) {
+  .courses-grid-professional {
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.2rem;
+    padding: 1.2rem 0;
+  }
+}
+
 @media (max-width: 768px) {
   .courses-grid-professional {
     grid-template-columns: 1fr;
-    gap: 1.5rem;
+    gap: 1rem;
     padding: 1rem 0;
   }
   
   .course-card-professional {
     margin: 0 1rem;
+    max-width: none;
   }
   
   .course-actions {
@@ -8073,6 +8095,56 @@ html {
     flex-direction: column;
     gap: 0.5rem;
     align-items: flex-start;
+  }
+}
+
+/* Layout optimizat pentru 2-3 cursuri */
+@media (min-width: 769px) and (max-width: 1200px) {
+  .courses-grid-professional {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.3rem;
+    justify-items: center;
+  }
+  
+  .course-card-professional {
+    max-width: 360px;
+  }
+  
+  .courses-grid-professional.two-courses {
+    grid-template-columns: repeat(2, minmax(280px, 1fr));
+    gap: 1.4rem;
+    max-width: 700px;
+  }
+  
+  .courses-grid-professional.three-courses {
+    grid-template-columns: repeat(3, minmax(250px, 1fr));
+    gap: 1.2rem;
+    max-width: 900px;
+  }
+}
+
+/* Layout optimizat pentru 4+ cursuri */
+@media (min-width: 1201px) {
+  .courses-grid-professional {
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.4rem;
+    justify-items: center;
+  }
+  
+  .course-card-professional {
+    max-width: 350px;
+  }
+  
+  .courses-grid-professional.two-courses {
+    grid-template-columns: repeat(2, minmax(300px, 1fr));
+    gap: 1.6rem;
+    max-width: 800px;
+  }
+  
+  .courses-grid-professional.three-courses {
+    grid-template-columns: repeat(3, minmax(280px, 1fr));
+    gap: 1.4rem;
+    max-width: 1000px;
   }
 }
 

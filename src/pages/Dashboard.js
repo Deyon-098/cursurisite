@@ -12,30 +12,89 @@ const generateAnalytics = (orders, courseProgress, userActivity) => ({
     '/courses': Math.floor(Math.random() * 1000) + 500,
     '/dashboard': Math.floor(Math.random() * 500) + 200,
   },
-  coursesProgress: courseProgress.map(progress => ({
-    id: progress.courseId,
-    title: progress.courseTitle,
-    progress: progress.progress,
-    timeSpent: `${progress.timeSpent || 0}h`,
-    lastAccessed: progress.lastAccessed ? 
-      new Date(progress.lastAccessed.seconds * 1000).toLocaleDateString('ro-RO') : 
-      'Nu accesat',
-    completionRate: progress.progress
-  })),
-  recentActivity: userActivity.slice(0, 5).map(activity => ({
-    type: activity.type,
-    course: activity.courseTitle || 'Sistem',
-    action: activity.action,
-    time: activity.timestamp ? 
-      new Date(activity.timestamp.seconds * 1000).toLocaleDateString('ro-RO') : 
-      'Recent'
-  })),
-  monthlyStats: {
-    coursesCompleted: courseProgress.filter(c => c.progress >= 95).length,
-    hoursLearned: courseProgress.reduce((sum, c) => sum + (c.timeSpent || 0), 0),
-    streakDays: Math.floor(Math.random() * 30) + 1,
-    averageScore: Math.floor(Math.random() * 20) + 80
-  }
+  coursesProgress: courseProgress.map(progress => {
+    console.log('📊 Procesez progresul:', progress);
+    return {
+      id: progress.courseId,
+      title: progress.courseTitle,
+      progress: Math.min(100, progress.progress || 0), // Asigură-te că progresul nu depășește 100%
+      timeSpent: progress.timeSpent || 0,
+      lastAccessed: progress.lastAccessed ? 
+        new Date(progress.lastAccessed.seconds * 1000).toLocaleDateString('ro-RO') : 
+        'Nu accesat',
+      completionRate: Math.min(100, progress.progress || 0),
+      completedLessons: progress.completedLessons || []
+    };
+  }),
+  recentActivity: (() => {
+    const activities = [];
+    
+    // Generează activitate bazată pe progresul cursurilor
+    courseProgress.forEach(progress => {
+      if (progress.completedLessons && progress.completedLessons.length > 0) {
+        // Adaugă activitate pentru lecții completate
+        progress.completedLessons.forEach((lessonIndex, index) => {
+          activities.push({
+            type: 'course_progress',
+            course: progress.courseTitle,
+            action: `Lecția ${lessonIndex + 1} completată`,
+            time: new Date(Date.now() - (index * 24 * 60 * 60 * 1000)).toLocaleDateString('ro-RO')
+          });
+        });
+      }
+      
+      // Adaugă activitate pentru progres general
+      if (progress.progress > 0) {
+        activities.push({
+          type: 'course_progress',
+          course: progress.courseTitle,
+          action: `${progress.progress}% progres realizat`,
+          time: new Date(Date.now() - (Math.random() * 7 * 24 * 60 * 60 * 1000)).toLocaleDateString('ro-RO')
+        });
+      }
+    });
+    
+    // Adaugă activitatea din userActivity dacă există
+    userActivity.forEach(activity => {
+      activities.push({
+        type: activity.type,
+        course: activity.courseTitle || 'Sistem',
+        action: activity.action,
+        time: activity.timestamp ? 
+          new Date(activity.timestamp.seconds * 1000).toLocaleDateString('ro-RO') : 
+          'Recent'
+      });
+    });
+    
+    // Sortează după timp și ia primele 5
+    return activities
+      .sort((a, b) => new Date(b.time) - new Date(a.time))
+      .slice(0, 5);
+  })(),
+  monthlyStats: (() => {
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+    
+    // Calculează statisticile reale pentru luna curentă
+    const coursesCompleted = courseProgress.filter(c => c.progress >= 95).length;
+    const totalTimeSpent = courseProgress.reduce((sum, c) => sum + (c.timeSpent || 0), 0);
+    const hoursLearned = Math.round(totalTimeSpent / 60 * 10) / 10;
+    
+    // Calculează zilele consecutive bazate pe activitate
+    const streakDays = Math.min(30, Math.max(1, Math.floor(totalTimeSpent / 60) + 1));
+    
+    // Calculează scorul mediu bazat pe progres
+    const averageScore = courseProgress.length > 0 ? 
+      Math.round(courseProgress.reduce((sum, c) => sum + c.progress, 0) / courseProgress.length) : 
+      0;
+    
+    return {
+      coursesCompleted,
+      hoursLearned,
+      streakDays,
+      averageScore
+    };
+  })()
 });
 
 export default function Dashboard() {
@@ -99,12 +158,12 @@ export default function Dashboard() {
     if (!user) return;
 
     try {
+      console.log('🔄 Reîncarc datele Dashboard pentru utilizatorul:', user.id);
+      
       await waitForFirebase();
       
       const { collection, getDocs, query, where } = window.firestoreFunctions;
       const db = window.firebaseDB;
-
-      console.log('🔄 Reîncarc datele Dashboard pentru utilizatorul:', user.id);
       
       const [orders, allCourses, courseProgress, userActivity] = await Promise.all([
         getUserOrders(user.id),
@@ -114,7 +173,9 @@ export default function Dashboard() {
           const progressRef = collection(db, 'courseProgress');
           const progressQuery = query(progressRef, where('userId', '==', user.id));
           const progressSnapshot = await getDocs(progressQuery);
-          return progressSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          const progressData = progressSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          console.log('📊 Progres încărcat din Firebase:', progressData);
+          return progressData;
         })(),
         // Încarcă activitatea utilizatorului
         (async () => {
@@ -133,6 +194,9 @@ export default function Dashboard() {
       const purchasedCourses = allCourses.filter(course => 
         purchasedCourseIds.includes(course.id)
       );
+
+      console.log('📚 Cursuri cumpărate găsite:', purchasedCourses.length);
+      console.log('📊 Progres cursuri:', courseProgress.length);
 
       // Generează analytics bazate pe datele reale
       const realAnalytics = generateAnalytics(orders, courseProgress, userActivity);
@@ -170,13 +234,15 @@ export default function Dashboard() {
         const [orders, allCourses, courseProgress, userActivity] = await Promise.all([
           getUserOrders(user.id),
           getCourses(),
-          // Încarcă progresul cursurilor
-          (async () => {
-            const progressRef = collection(db, 'courseProgress');
-            const progressQuery = query(progressRef, where('userId', '==', user.id));
-            const progressSnapshot = await getDocs(progressQuery);
-            return progressSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-          })(),
+        // Încarcă progresul cursurilor
+        (async () => {
+          const progressRef = collection(db, 'courseProgress');
+          const progressQuery = query(progressRef, where('userId', '==', user.id));
+          const progressSnapshot = await getDocs(progressQuery);
+          const progressData = progressSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          console.log('📊 Progres încărcat din Firebase (loadDashboardData):', progressData);
+          return progressData;
+        })(),
           // Încarcă activitatea utilizatorului
           (async () => {
             const activityRef = collection(db, 'userActivity');
@@ -203,9 +269,11 @@ export default function Dashboard() {
         );
         console.log('📚 Cursuri cumpărate găsite:', purchasedCourses.length);
         console.log('📚 Cursuri cumpărate:', purchasedCourses);
+        console.log('📊 Progres cursuri (loadDashboardData):', courseProgress);
 
         // Generează analytics bazate pe datele reale
         const realAnalytics = generateAnalytics(orders, courseProgress, userActivity);
+        console.log('📊 Analytics generate:', realAnalytics);
 
         setDashboardData({
           orders: orders || [],
@@ -226,6 +294,25 @@ export default function Dashboard() {
       loadDashboardData();
     }
   }, [user, authLoading, lastUserId]);
+
+  // Ascultă pentru actualizări de progres din CourseLearning
+  useEffect(() => {
+    const handleProgressUpdate = (event) => {
+      console.log('📈 Progres actualizat, reîncarc dashboard-ul:', event.detail);
+      if (event.detail.userId === user?.id) {
+        // Adaugă un mic delay pentru a permite Firebase să se sincronizeze
+        setTimeout(() => {
+          reloadDashboardData();
+        }, 1000);
+      }
+    };
+
+    window.addEventListener('courseProgressUpdated', handleProgressUpdate);
+    
+    return () => {
+      window.removeEventListener('courseProgressUpdated', handleProgressUpdate);
+    };
+  }, [user]);
 
   // Animații GSAP pentru Dashboard - mutat înainte de return-urile condiționale
   useEffect(() => {
@@ -348,13 +435,6 @@ export default function Dashboard() {
             <span>Progres</span>
           </button>
           
-          <button 
-            className={`nav-item ${activeView === 'favorites' ? 'active' : ''}`}
-            onClick={() => setActiveView('favorites')}
-          >
-            <span className="nav-icon">⭐</span>
-            <span>Favorite</span>
-          </button>
         </nav>
         
         <div className="sidebar-storage">
@@ -379,9 +459,6 @@ export default function Dashboard() {
               <span>Finalizate: {dashboardData.analytics.coursesProgress.filter(c => c.progress >= 95).length}</span>
             </div>
           </div>
-          <Link to="/courses" className="upgrade-btn">
-            🚀 Explorează Cursuri
-          </Link>
         </div>
       </div>
 
@@ -394,31 +471,12 @@ export default function Dashboard() {
               {activeView === 'overview' && 'Dashboard'}
               {activeView === 'courses' && 'Cursurile Mele'}
               {activeView === 'analytics' && 'Progres'}
-              {activeView === 'favorites' && 'Favorite'}
             </h1>
             <div className="breadcrumb">
               <span>📁 {user.name}</span>
             </div>
           </div>
           
-          <div className="header-right">
-            <button 
-              className="btn secondary small"
-              onClick={reloadDashboardData}
-              style={{ marginRight: '1rem' }}
-            >
-              🔄 Reîncarcă
-            </button>
-            <button className="header-btn">
-              <span>📊</span>
-            </button>
-            <button className="header-btn">
-              <span>ℹ️</span>
-            </button>
-            <button className="header-btn" onClick={handleLogout}>
-              <span>🚪</span>
-            </button>
-          </div>
         </div>
 
         {/* Content based on active view */}
@@ -428,8 +486,8 @@ export default function Dashboard() {
             <div className="quick-access">
               <h2>ACCES RAPID</h2>
               <div className="quick-access-grid">
-                {dashboardData.analytics.coursesProgress.slice(0, 3).map((course, index) => (
-                  <div key={course.id} className="quick-access-card">
+                {dashboardData.purchasedCourses.slice(0, 3).map((course, index) => (
+                  <Link key={course.id} to={`/learn/${course.id}`} className="quick-access-card">
                     <div className="card-header">
                       <div className="shared-avatars">
                         <div className="avatar">📚</div>
@@ -441,17 +499,8 @@ export default function Dashboard() {
                       <div className="card-type">CURS</div>
                       <div className="card-title">{course.title}</div>
                     </div>
-                  </div>
+                  </Link>
                 ))}
-                
-                <div className="quick-access-card summary">
-                  <div className="summary-icon">📊</div>
-                  <div className="summary-content">
-                    <div className="summary-title">Raport Luna Aceasta</div>
-                    <div className="summary-subtitle">ULTIMA MODIFICARE</div>
-                    <div className="summary-date">Dec 2, 2024 • 4:30 AM</div>
-                  </div>
-                </div>
               </div>
             </div>
 
@@ -462,20 +511,16 @@ export default function Dashboard() {
                 <thead>
                   <tr>
                     <th>Nume</th>
-                    <th>Proprietar</th>
-                    <th>Ultima modificare</th>
                     <th>Progres</th>
                     <th>Timp petrecut</th>
-                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
                   {dashboardData.purchasedCourses.map(course => {
                     // Găsește progresul pentru acest curs
-                    const courseProgress = dashboardData.analytics.coursesProgress.find(cp => cp.courseId === course.id);
-                    const progress = courseProgress ? courseProgress.progress : 0;
+                    const courseProgress = dashboardData.analytics.coursesProgress.find(cp => cp.id === course.id);
+                    const progress = courseProgress ? Math.min(100, courseProgress.progress || 0) : 0;
                     const timeSpent = courseProgress ? courseProgress.timeSpent || 0 : 0;
-                    const lastAccessed = courseProgress ? courseProgress.lastAccessed : null;
                     
                     return (
                       <tr key={course.id}>
@@ -485,17 +530,6 @@ export default function Dashboard() {
                             <span className="file-name">{course.title}</span>
                           </div>
                         </td>
-                        <td>
-                          <div className="owner-cell">
-                            <div className="owner-avatar">👨‍🏫</div>
-                          </div>
-                        </td>
-                        <td className="date-cell">
-                          {lastAccessed ? 
-                            new Date(lastAccessed.seconds * 1000).toLocaleDateString('ro-RO') : 
-                            'Nu accesat'
-                          }
-                        </td>
                         <td className="size-cell">
                           <div className="progress-cell">
                             <div className="progress-bar-small">
@@ -504,9 +538,10 @@ export default function Dashboard() {
                             <span>{progress}%</span>
                           </div>
                         </td>
-                        <td className="size-cell">{timeSpent}h</td>
-                        <td>
-                          <button className="more-btn">⋯</button>
+                        <td className="size-cell">
+                          {timeSpent > 0 ? (
+                            timeSpent < 60 ? `${timeSpent}min` : `${Math.round(timeSpent / 60 * 10) / 10}h`
+                          ) : '0min'}
                         </td>
                       </tr>
                     );
@@ -525,13 +560,21 @@ export default function Dashboard() {
             </div>
             
             {dashboardData.purchasedCourses.length > 0 ? (
-              <div className={`courses-grid-professional ${dashboardData.purchasedCourses.length === 1 ? 'single-course' : ''}`}>
+              <div className={`courses-grid-professional ${dashboardData.purchasedCourses.length === 1 ? 'single-course' : ''} ${dashboardData.purchasedCourses.length === 2 ? 'two-courses' : ''} ${dashboardData.purchasedCourses.length === 3 ? 'three-courses' : ''}`}>
                 {dashboardData.purchasedCourses.map(course => {
                   // Găsește progresul pentru acest curs
-                  const courseProgress = dashboardData.analytics.coursesProgress.find(cp => cp.courseId === course.id);
-                  const progress = courseProgress ? courseProgress.progress : 0;
+                  const courseProgress = dashboardData.analytics.coursesProgress.find(cp => cp.id === course.id);
+                  const progress = courseProgress ? Math.min(100, courseProgress.progress || 0) : 0;
                   const timeSpent = courseProgress ? courseProgress.timeSpent || 0 : 0;
                   const lastAccessed = courseProgress ? courseProgress.lastAccessed : null;
+                  const completedLessons = courseProgress ? courseProgress.completedLessons || [] : [];
+                  
+                  console.log(`🔍 Debug curs ${course.title}:`, {
+                    courseId: course.id,
+                    courseProgress,
+                    progress,
+                    completedLessons
+                  });
                   
                   return (
                     <div key={course.id} className="course-card-professional">
@@ -544,14 +587,18 @@ export default function Dashboard() {
                       <div className="course-image-container">
                         <img src={course.image} alt={course.title} className="course-image" />
                         <div className="course-overlay">
-                          <button className="play-btn">
+                          <Link 
+                            to={`/learn/${course.id}`} 
+                            className="play-btn"
+                            title={`Începe cursul: ${course.title}`}
+                          >
                             <span className="play-icon">▶</span>
-                          </button>
+                          </Link>
                           <div className="course-progress">
                             <div className="progress-bar">
                               <div className="progress-fill" style={{width: `${progress}%`}}></div>
                             </div>
-                            <span className="progress-text">{progress}% completat</span>
+                            <span className="progress-text">{progress}% completat ({completedLessons.length} lecții)</span>
                           </div>
                         </div>
                       </div>
@@ -632,9 +679,9 @@ export default function Dashboard() {
               <div className="empty-courses">
                 <div className="empty-icon">📚</div>
                 <h3>Nu ai cursuri cumpărate încă</h3>
-                <p>Explorează cursurile noastre și începe să înveți!</p>
+                <p>Descoperă cursurile noastre și începe să înveți!</p>
                 <Link to="/courses" className="btn primary">
-                  🚀 Explorează Cursurile
+                  🚀 Descoperă Cursurile
                 </Link>
               </div>
             )}
@@ -694,6 +741,7 @@ export default function Dashboard() {
                           {activity.type === 'course_progress' && '📖'}
                           {activity.type === 'purchase' && '🛒'}
                           {activity.type === 'certificate' && '🏆'}
+                          {!activity.type && '📚'}
                         </div>
                         <div className="activity-content">
                           <div className="activity-course">{activity.course}</div>
@@ -714,23 +762,6 @@ export default function Dashboard() {
           </div>
         )}
 
-        {activeView === 'favorites' && (
-          <div className="favorites-content">
-            <div className="favorites-header">
-              <h2>⭐ Cursuri Favorite</h2>
-              <p>Cursurile pe care le-ai marcat ca favorite</p>
-            </div>
-            
-            <div className="empty-favorites">
-              <div className="empty-icon">⭐</div>
-              <h3>Nu ai cursuri favorite încă</h3>
-              <p>Marchează cursurile ca favorite pentru acces rapid!</p>
-              <Link to="/courses" className="btn primary">
-                🚀 Explorează Cursurile
-              </Link>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

@@ -2,7 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { getCourseById } from '../data/coursesFirebase';
 import { useAuth } from '../context/AuthContext';
-import { markLessonComplete, getCourseProgress } from '../firebase/firestore';
+import { markLessonComplete, getCourseProgress, updateTimeSpent } from '../firebase/firestore';
+import { debugCourseProgress } from '../scripts/debugProgress';
+import { fixCourseProgress } from '../scripts/fixProgress';
+import { useTimeTracking } from '../hooks/useTimeTracking';
 
 export default function CourseLearning() {
   const { id } = useParams();
@@ -15,21 +18,49 @@ export default function CourseLearning() {
   const [loading, setLoading] = useState(true);
   const [showMap, setShowMap] = useState(true);
 
-  // Lecții demo pentru cursuri
-  const generateLessons = (courseTitle) => {
+  // Hook pentru tracking-ul timpului
+  const { timeSpent, isTracking, stopTracking } = useTimeTracking(
+    user?.id, 
+    id, 
+    !loading && course && !showMap // Activează tracking-ul când cursul este încărcat și nu este în mapă
+  );
+
+  // Lecții demo pentru cursuri - folosind useCallback pentru a evita re-render-urile
+  const generateLessons = React.useCallback((courseTitle) => {
     const lessons = [];
-    const lessonCount = Math.floor(Math.random() * 8) + 6; // 6-13 lecții
+    // Folosim un număr variabil de lecții bazat pe titlul cursului pentru consistență
+    let lessonCount;
+    
+    // Determină numărul de lecții bazat pe tipul cursului
+    if (courseTitle.toLowerCase().includes('react')) {
+      lessonCount = 10;
+    } else if (courseTitle.toLowerCase().includes('javascript')) {
+      lessonCount = 12;
+    } else if (courseTitle.toLowerCase().includes('python')) {
+      lessonCount = 8;
+    } else if (courseTitle.toLowerCase().includes('css')) {
+      lessonCount = 6;
+    } else if (courseTitle.toLowerCase().includes('html')) {
+      lessonCount = 7;
+    } else {
+      // Pentru alte cursuri, folosim un număr bazat pe hash-ul titlului pentru consistență
+      let hash = 0;
+      for (let i = 0; i < courseTitle.length; i++) {
+        hash = ((hash << 5) - hash + courseTitle.charCodeAt(i)) & 0xffffffff;
+      }
+      lessonCount = Math.abs(hash) % 5 + 6; // 6-10 lecții
+    }
     
     for (let i = 0; i < lessonCount; i++) {
       lessons.push({
         id: i + 1,
         title: `Lecția ${i + 1}: ${getLessonTitle(courseTitle, i)}`,
         description: `În această lecție vei învăța conceptele fundamentale și vei aplica cunoștințele în practică.`,
-        duration: Math.floor(Math.random() * 30) + 10, // 10-40 minute
+        duration: 15 + (i * 3) + (Math.abs(courseTitle.charCodeAt(i % courseTitle.length)) % 10), // Durată consistentă bazată pe curs
         type: i % 3 === 0 ? 'video' : i % 3 === 1 ? 'theory' : 'practice',
         difficulty: i < 3 ? 'beginner' : i < 6 ? 'intermediate' : 'advanced',
-        unlocked: i === 0 || (i > 0 && completedLessons.has(i - 1)),
-        completed: completedLessons.has(i),
+        unlocked: i === 0, // Doar prima lecție este deblocată inițial
+        completed: false, // Inițial nici o lecție nu este completată
         resources: [
           { type: 'video', title: 'Video Lecție', url: '#' },
           { type: 'pdf', title: 'Materiale PDF', url: '#' },
@@ -38,7 +69,7 @@ export default function CourseLearning() {
       });
     }
     return lessons;
-  };
+  }, []);
 
   const getLessonTitle = (courseTitle, index) => {
     const titles = {
@@ -92,35 +123,73 @@ export default function CourseLearning() {
     const loadCourse = async () => {
       try {
         setLoading(true);
+        // Scroll la începutul paginii când se încarcă cursul
+        setTimeout(() => {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 100);
+        
         const courseData = await getCourseById(id);
         
         if (courseData) {
           const lessons = generateLessons(courseData.title);
-          setCourse({
-            ...courseData,
-            lessons
-          });
-
-          // Încarcă progresul existent din Firebase
+          
+          // Încarcă progresul existent din Firebase ÎNAINTE de a seta cursul
           if (user) {
+            console.log('🔄 Încarc progresul pentru utilizatorul:', user.id, 'cursul:', courseData.id);
+            
+            // Debug progresul
+            await debugCourseProgress(user.id, courseData.id);
+            
             const progressData = await getCourseProgress(user.id, courseData.id);
-            if (progressData) {
-              const completedLessons = new Set(progressData.completedLessons || []);
+            console.log('📊 Progres primit din Firebase:', progressData);
+            
+            if (progressData && progressData.completedLessons) {
+              // Filtrează lecțiile completate pentru a elimina indexurile invalide
+              const validCompletedLessons = progressData.completedLessons.filter(index => 
+                index >= 0 && index < lessons.length
+              );
+              
+              const completedLessons = new Set(validCompletedLessons);
               setCompletedLessons(completedLessons);
               
-              // Deblochează lecțiile completate și următoarea
+              console.log('✅ Lecții completate găsite:', Array.from(completedLessons));
+              console.log('📊 Total lecții în curs:', lessons.length);
+              
+              // Actualizează lecțiile cu progresul din Firebase
               lessons.forEach((lesson, index) => {
                 if (completedLessons.has(index)) {
                   lesson.completed = true;
                   lesson.unlocked = true;
+                  console.log(`✅ Lecția ${index} marcată ca completată`);
                 } else if (index > 0 && completedLessons.has(index - 1)) {
                   lesson.unlocked = true;
+                  console.log(`🔓 Lecția ${index} deblocată (lecția anterioară completată)`);
+                } else if (index === 0) {
+                  lesson.unlocked = true; // Prima lecție este întotdeauna deblocată
                 }
               });
               
-              console.log('📈 Progres încărcat din Firebase:', progressData);
+              console.log('📈 Progres încărcat cu succes din Firebase:', progressData);
+              
+              // Dacă există lecții invalide în progres, curăță-le
+              if (validCompletedLessons.length !== progressData.completedLessons.length) {
+                console.log('🧹 Curăț lecțiile invalide din progres');
+                await fixCourseProgress(user.id, courseData.id, courseData.title, lessons.length);
+              }
+            } else {
+              console.log('📊 Nu există progres pentru acest curs, toate lecțiile sunt blocate except prima');
+              // Prima lecție este întotdeauna deblocată
+              if (lessons.length > 0) {
+                lessons[0].unlocked = true;
+              }
             }
           }
+          
+          // Setează cursul cu lecțiile actualizate
+          setCourse({
+            ...courseData,
+            lessons
+          });
         } else {
           navigate('/courses');
         }
@@ -133,15 +202,38 @@ export default function CourseLearning() {
     };
 
     loadCourse();
-  }, [id, navigate, user]);
+  }, [id, navigate, user, generateLessons]);
 
   const handleLessonClick = (lessonIndex) => {
     const lesson = course.lessons[lessonIndex];
     if (lesson.unlocked) {
       setCurrentLesson(lessonIndex);
       setShowMap(false);
+      
+      // Scroll la începutul paginii cu delay pentru a permite render-ul
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 100);
     }
   };
+
+  // Salvează timpul petrecut în Firebase când componenta se deconectează
+  useEffect(() => {
+    return () => {
+      if (user && course && timeSpent > 0) {
+        console.log('💾 Salvând timpul petrecut la deconectare:', timeSpent, 'minute');
+        updateTimeSpent(user.id, course.id, course.title, timeSpent);
+      }
+    };
+  }, [user, course, timeSpent]);
+
+  // Salvează timpul la fiecare 5 minute
+  useEffect(() => {
+    if (timeSpent > 0 && timeSpent % 5 === 0 && user && course) {
+      console.log('💾 Salvând timpul petrecut (5 min):', timeSpent, 'minute');
+      updateTimeSpent(user.id, course.id, course.title, 5);
+    }
+  }, [timeSpent, user, course]);
 
   const handleMarkLessonComplete = async (lessonIndex) => {
     if (!user) {
@@ -181,6 +273,19 @@ export default function CourseLearning() {
         
         console.log('✅ Lecția a fost marcată ca completată în Firebase');
         console.log('📈 Progres actualizat:', Math.round(((lessonIndex + 1) / course.lessons.length) * 100) + '%');
+        
+        // Debug progresul după marcare
+        await debugCourseProgress(user.id, course.id);
+        
+        // Notifică dashboard-ul despre schimbarea progresului
+        window.dispatchEvent(new CustomEvent('courseProgressUpdated', {
+          detail: {
+            userId: user.id,
+            courseId: course.id,
+            lessonIndex,
+            totalLessons: course.lessons.length
+          }
+        }));
       }
     } catch (error) {
       console.error('❌ Eroare la marcarea lecției ca completată:', error);
@@ -329,7 +434,13 @@ export default function CourseLearning() {
             <div className="lesson-header">
               <button 
                 className="back-to-map-btn"
-                onClick={() => setShowMap(true)}
+                onClick={() => {
+                  setShowMap(true);
+                  // Scroll la începutul paginii cu delay
+                  setTimeout(() => {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }, 100);
+                }}
               >
                 ← Înapoi la Hartă
               </button>
@@ -400,6 +511,10 @@ export default function CourseLearning() {
                     className="next-btn"
                     onClick={() => {
                       setCurrentLesson(currentLesson + 1);
+                      // Scroll la începutul paginii cu delay
+                      setTimeout(() => {
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }, 100);
                     }}
                   >
                     Următoarea Lecție →
