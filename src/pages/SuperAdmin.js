@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { databaseManager } from '../scripts/databaseManager';
+import { waitForFirebase } from '../firebase/config';
 
 export default function SuperAdmin() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loginData, setLoginData] = useState({ username: '', password: '' });
   const [loginError, setLoginError] = useState('');
+  const [loggedUser, setLoggedUser] = useState(null);
   const [activeSection, setActiveSection] = useState('dashboard');
   const [dashboardStats, setDashboardStats] = useState({
     totalCourses: 0,
     totalUsers: 0,
     totalPayments: 0,
+    totalRevenue: 0,
     popularCourses: [],
     loading: true
   });
@@ -50,13 +53,82 @@ export default function SuperAdmin() {
     isFeatured: false
   });
 
+  const navigate = useNavigate();
+
+  // Funcții pentru obținerea datelor reale din Firebase
+  const getRealUsersCount = async () => {
+    try {
+      await waitForFirebase();
+      const { collection, getDocs } = window.firestoreFunctions;
+      const db = window.firebaseDB;
+      
+      const usersRef = collection(db, 'users');
+      const snapshot = await getDocs(usersRef);
+      return snapshot.size;
+    } catch (error) {
+      console.error('Eroare la obținerea utilizatorilor:', error);
+      return 0;
+    }
+  };
+
+  const getRealOrdersCount = async () => {
+    try {
+      await waitForFirebase();
+      const { collection, getDocs } = window.firestoreFunctions;
+      const db = window.firebaseDB;
+      
+      const ordersRef = collection(db, 'orders');
+      const snapshot = await getDocs(ordersRef);
+      return snapshot.size;
+    } catch (error) {
+      console.error('Eroare la obținerea comenzilor:', error);
+      return 0;
+    }
+  };
+
+  const getRealRevenue = async () => {
+    try {
+      await waitForFirebase();
+      const { collection, getDocs } = window.firestoreFunctions;
+      const db = window.firebaseDB;
+      
+      const ordersRef = collection(db, 'orders');
+      const snapshot = await getDocs(ordersRef);
+      
+      let totalRevenue = 0;
+      snapshot.docs.forEach(doc => {
+        const orderData = doc.data();
+        if (orderData.totals && orderData.totals.total) {
+          totalRevenue += orderData.totals.total;
+        }
+      });
+      
+      return totalRevenue;
+    } catch (error) {
+      console.error('Eroare la obținerea veniturilor:', error);
+      return 0;
+    }
+  };
+
+  // Baza de date cu utilizatori admin
+  const adminUsers = {
+    'danu': { name: 'Danu', role: 'Super Admin', password: '1234' },
+    'admin': { name: 'Admin', role: 'Administrator', password: 'admin123' },
+    'manager': { name: 'Manager', role: 'Manager', password: 'manager123' }
+  };
+
   // Funcție pentru autentificare
   const handleLogin = (e) => {
     e.preventDefault();
     setLoginError('');
     
-    if (loginData.username === 'danu' && loginData.password === '1234') {
+    const user = adminUsers[loginData.username];
+    if (user && user.password === loginData.password) {
       setIsAuthenticated(true);
+      setLoggedUser({
+        name: user.name,
+        role: user.role
+      });
     } else {
       setLoginError('Acces interzis');
     }
@@ -202,20 +274,46 @@ export default function SuperAdmin() {
         // Inițializează managerul bazei de date
         await databaseManager.initialize();
         
-        // Obține datele reale din baza de date
-        const stats = databaseManager.getAdvancedStats();
+        // Obține datele reale din Firebase
+        const [realUsers, realOrders, realRevenue] = await Promise.all([
+          getRealUsersCount(),
+          getRealOrdersCount(),
+          getRealRevenue()
+        ]);
+        
+        // Obține datele cursurilor din databaseManager
+        const totalCourses = databaseManager.courses?.length || 0;
+        const publishedCourses = databaseManager.courses?.filter(c => 
+          c.settings?.isPublished || c.isPublished
+        )?.length || 0;
+        const featuredCourses = databaseManager.courses?.filter(c => 
+          c.settings?.isFeatured || c.isFeatured
+        )?.length || 0;
+        
+        // Obține cursurile populare
         const popularCourses = databaseManager.getPopularCourses(5);
         
+        console.log('📊 Statistici reale:', {
+          totalCourses,
+          realUsers,
+          realOrders,
+          realRevenue,
+          publishedCourses,
+          featuredCourses
+        });
+        
         setDashboardStats({
-          totalCourses: stats.courses.total,
-          totalUsers: stats.users.total,
-          totalPayments: stats.payments.total,
-          totalRevenue: stats.payments.totalRevenue,
+          totalCourses: totalCourses,
+          totalUsers: realUsers,
+          totalPayments: realOrders,
+          totalRevenue: realRevenue,
+          publishedCourses: publishedCourses,
+          featuredCourses: featuredCourses,
           popularCourses: popularCourses.map(course => ({
             id: course.id,
             title: course.title,
-            rating: course.stats?.rating || 0,
-            students: course.stats?.students || 0,
+            rating: course.stats?.rating || course.rating || 0,
+            students: course.stats?.students || course.studentsCount || 0,
             price: course.price || 0
           })),
           loading: false
@@ -236,68 +334,102 @@ export default function SuperAdmin() {
     }
   }, [isAuthenticated, activeSection]);
 
+  // Actualizează statisticile când se modifică cursurile
+  useEffect(() => {
+    const updateStatsFromCourses = async () => {
+      if (isAuthenticated && courses.length > 0) {
+        try {
+          // Obține datele reale din Firebase
+          const [realUsers, realOrders, realRevenue] = await Promise.all([
+            getRealUsersCount(),
+            getRealOrdersCount(),
+            getRealRevenue()
+          ]);
+          
+          const totalCourses = courses.length;
+          const publishedCourses = courses.filter(c => 
+            c.settings?.isPublished || c.isPublished
+          ).length;
+          const featuredCourses = courses.filter(c => 
+            c.settings?.isFeatured || c.isFeatured
+          ).length;
+          
+          setDashboardStats(prev => ({
+            ...prev,
+            totalCourses: totalCourses,
+            totalUsers: realUsers,
+            totalPayments: realOrders,
+            totalRevenue: realRevenue,
+            publishedCourses: publishedCourses,
+            featuredCourses: featuredCourses
+          }));
+        } catch (error) {
+          console.error('Eroare la actualizarea statisticilor:', error);
+        }
+      }
+    };
+
+    updateStatsFromCourses();
+  }, [courses, isAuthenticated]);
+
   // Dacă nu este autentificat, afișează ecranul de login
   if (!isAuthenticated) {
     return (
-      <div className="admin-login-page">
-        <div className="admin-login-container">
-          <div className="admin-login-card">
-            <div className="admin-login-header">
-              <div className="admin-login-logo">
-                <span className="admin-login-icon">👑</span>
-                <h1>Super Admin</h1>
+      <div className="sa-login-page">
+        <div className="sa-login-container">
+          <div className="sa-login-card">
+            <div className="sa-login-header">
+              <div className="sa-logo">
+                <div className="sa-logo-icon">CP</div>
+                <div className="sa-logo-text">CursuriPlus</div>
               </div>
-              <p>Panoul de control CursuriPlus</p>
+              <div className="sa-login-title">
+                <h1>Super Admin</h1>
+                <p>Panoul de Control CursuriPlus</p>
+              </div>
             </div>
             
-            <form className="admin-login-form" onSubmit={handleLogin}>
-              <div className="admin-form-group">
-                <label htmlFor="username" className="admin-form-label">
-                  Utilizator
-                </label>
+            <form className="sa-login-form" onSubmit={handleLogin}>
+              <div className="sa-form-group">
+                <label htmlFor="username">Utilizator</label>
                 <input
                   type="text"
                   id="username"
                   name="username"
                   value={loginData.username}
                   onChange={handleInputChange}
-                  className="admin-form-input"
                   placeholder="Introdu utilizatorul"
                   required
                 />
               </div>
               
-              <div className="admin-form-group">
-                <label htmlFor="password" className="admin-form-label">
-                  Parolă
-                </label>
+              <div className="sa-form-group">
+                <label htmlFor="password">Parolă</label>
                 <input
                   type="password"
                   id="password"
                   name="password"
                   value={loginData.password}
                   onChange={handleInputChange}
-                  className="admin-form-input"
                   placeholder="Introdu parola"
                   required
                 />
               </div>
               
               {loginError && (
-                <div className="admin-login-error">
-                  <span className="admin-error-icon">⚠️</span>
+                <div className="sa-login-error">
+                  <span className="sa-error-icon">⚠️</span>
                   {loginError}
                 </div>
               )}
               
-              <button type="submit" className="admin-login-btn">
-                <span className="admin-btn-icon">🔐</span>
+              <button type="submit" className="sa-login-btn">
                 Accesează Panoul
               </button>
             </form>
             
-            <div className="admin-login-footer">
-              <Link to="/" className="admin-back-link">
+            <div className="sa-login-footer">
+              <Link to="/" className="sa-back-link">
                 ← Înapoi la Site
               </Link>
             </div>
@@ -350,238 +482,302 @@ export default function SuperAdmin() {
     switch (activeSection) {
       case 'dashboard':
         return (
-          <div className="admin-content">
-            <div className="admin-dashboard">
-              <div className="admin-dashboard-header">
-                <h1>Dashboard Super Admin</h1>
-                <p>Prezentare generală a platformei CursuriPlus</p>
+          <div className="sa-dashboard-content">
+            <div className="sa-dashboard-header">
+              <h1>Dashboard</h1>
+              <p>Prezentare generală a platformei</p>
+            </div>
+            
+            {dashboardStats.loading ? (
+              <div className="sa-loading">
+                <div className="sa-loading-spinner"></div>
+                <p>Se încarcă statisticile...</p>
               </div>
-              
-              {dashboardStats.loading ? (
-                <div className="admin-loading">
-                  <div className="admin-loading-spinner">🔄</div>
-                  <p>Se încarcă statisticile...</p>
+            ) : (
+              <>
+                {/* Statistici principale */}
+                <div className="sa-stats-grid">
+                  <div className="sa-stat-card">
+                    <div className="sa-stat-header">
+                      <h3>Venit Total</h3>
+                      <div className="sa-stat-icon">💰</div>
+                    </div>
+                    <div className="sa-stat-value">€{dashboardStats.totalRevenue?.toLocaleString() || '0'}</div>
+                    <div className="sa-stat-trend positive">
+                      <span>+15%</span>
+                      <span>față de luna trecută</span>
+                    </div>
+                    <button className="sa-stat-action">Vezi Detalii →</button>
+                  </div>
+                  
+                  <div className="sa-stat-card">
+                    <div className="sa-stat-header">
+                      <h3>Cursuri Vândute</h3>
+                      <div className="sa-stat-icon">📚</div>
+                    </div>
+                    <div className="sa-stat-value">{dashboardStats.totalPayments || '0'}</div>
+                    <div className="sa-stat-trend positive">
+                      <span>+8%</span>
+                      <span>față de luna trecută</span>
+                    </div>
+                    <button className="sa-stat-action">Vezi Cursuri →</button>
+                  </div>
+                  
+                  <div className="sa-stat-card">
+                    <div className="sa-stat-header">
+                      <h3>Studenți Activi</h3>
+                      <div className="sa-stat-icon">👥</div>
+                    </div>
+                    <div className="sa-countries-list">
+                      <div className="sa-country-item">
+                        <span className="sa-flag">📖</span>
+                        <span>Studenți înregistrați: {dashboardStats.totalUsers || '0'}</span>
+                      </div>
+                      <div className="sa-country-item">
+                        <span className="sa-flag">🎓</span>
+                        <span>Cursuri finalizate: {Math.floor((dashboardStats.totalUsers || 0) * 0.3)}</span>
+                      </div>
+                      <div className="sa-country-item">
+                        <span className="sa-flag">⭐</span>
+                        <span>Rating mediu: 4.8/5</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              ) : (
-                <>
-                  {/* Statistici principale */}
-                  <div className="admin-stats-grid">
-                    <div className="admin-stat-card">
-                      <div className="admin-stat-icon">📚</div>
-                      <div className="admin-stat-content">
-                        <div className="admin-stat-number">{dashboardStats.totalCourses}</div>
-                        <div className="admin-stat-label">Total Cursuri</div>
-                        <div className="admin-stat-trend">+12% față de luna trecută</div>
+                
+                {/* Grafic și statistici secundare */}
+                <div className="sa-secondary-grid">
+                  <div className="sa-chart-card">
+                    <div className="sa-chart-header">
+                      <h3>Evoluția Înregistrărilor</h3>
+                      <span>Ultimele 30 zile</span>
+                    </div>
+                    <div className="sa-chart-placeholder">
+                      <div className="sa-chart-line"></div>
+                      <div className="sa-chart-point">{dashboardStats.totalUsers || '0'} studenți</div>
+                    </div>
+                  </div>
+                  
+                  <div className="sa-billing-card">
+                    <div className="sa-billing-header">
+                      <h3>Finanțe</h3>
+                    </div>
+                    <div className="sa-billing-details">
+                      <div className="sa-billing-item">
+                        <span>Venit lunar:</span>
+                        <span>€{Math.floor((dashboardStats.totalRevenue || 0) / 12).toLocaleString()}</span>
+                      </div>
+                      <div className="sa-billing-item">
+                        <span>Cursuri vândute:</span>
+                        <span>{dashboardStats.totalPayments || '0'}</span>
+                      </div>
+                      <div className="sa-billing-item">
+                        <span>Rambursări:</span>
+                        <span>€0</span>
+                      </div>
+                      <div className="sa-billing-item">
+                        <span>Comisioane:</span>
+                        <span>€{Math.floor((dashboardStats.totalRevenue || 0) * 0.05).toLocaleString()}</span>
                       </div>
                     </div>
-                    
-                    <div className="admin-stat-card">
-                      <div className="admin-stat-icon">👥</div>
-                      <div className="admin-stat-content">
-                        <div className="admin-stat-number">{dashboardStats.totalUsers}</div>
-                        <div className="admin-stat-label">Utilizatori Înregistrați</div>
-                        <div className="admin-stat-trend">+8% față de luna trecută</div>
+                    <div className="sa-billing-total">
+                      <div className="sa-total-circle">
+                        <span>€{dashboardStats.totalRevenue?.toLocaleString() || '0'}</span>
+                        <span>Total</span>
                       </div>
                     </div>
-                    
-                    <div className="admin-stat-card">
-                      <div className="admin-stat-icon">💳</div>
-                      <div className="admin-stat-content">
-                        <div className="admin-stat-number">{dashboardStats.totalPayments}</div>
-                        <div className="admin-stat-label">Tranzacții Finalizate</div>
-                        <div className="admin-stat-trend">+15% față de luna trecută</div>
-                      </div>
+                  </div>
+                </div>
+                
+                {/* Audience și Account Overview */}
+                <div className="sa-tertiary-grid">
+                  <div className="sa-audience-card">
+                    <div className="sa-audience-header">
+                      <h3>Distribuția Studenților</h3>
                     </div>
-                    
-                    <div className="admin-stat-card">
-                      <div className="admin-stat-icon">💰</div>
-                      <div className="admin-stat-content">
-                        <div className="admin-stat-number">{dashboardStats.totalRevenue?.toLocaleString() || '0'} RON</div>
-                        <div className="admin-stat-label">Venit Total</div>
-                        <div className="admin-stat-trend">+22% față de luna trecută</div>
+                    <div className="sa-audience-chart">
+                      <div className="sa-audience-bars">
+                        <div className="sa-audience-bar">
+                          <span>Începători</span>
+                          <div className="sa-bar-container">
+                            <div className="sa-bar-fill" style={{width: '65%'}}></div>
+                          </div>
+                        </div>
+                        <div className="sa-audience-bar">
+                          <span>Avansați</span>
+                          <div className="sa-bar-container">
+                            <div className="sa-bar-fill" style={{width: '35%'}}></div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="sa-audience-percentage">
+                        <div className="sa-percentage-circle">
+                          <span>85%</span>
+                        </div>
                       </div>
                     </div>
                   </div>
                   
-                  {/* Cursuri populare */}
-                  <div className="admin-popular-courses">
-                    <h2>Cele Mai Populare Cursuri</h2>
-                    <div className="admin-courses-list">
-                      {dashboardStats.popularCourses.map((course, index) => (
-                        <div key={course.id} className="admin-course-item">
-                          <div className="admin-course-rank">#{index + 1}</div>
-                          <div className="admin-course-info">
-                            <div className="admin-course-title">{course.title}</div>
-                            <div className="admin-course-meta">
-                              <span className="admin-course-rating">⭐ {course.rating}</span>
-                              <span className="admin-course-students">👥 {course.students}</span>
-                              <span className="admin-course-price">{course.price} RON</span>
-                            </div>
-                          </div>
-                          <div className="admin-course-progress">
-                            <div className="admin-progress-bar">
-                              <div 
-                                className="admin-progress-fill" 
-                                style={{ width: `${Math.min(100, (course.students / 100) * 100)}%` }}
-                              ></div>
-                            </div>
-                            <span className="admin-progress-text">
-                              {Math.min(100, Math.round((course.students / 100) * 100))}% popularitate
-                            </span>
-                          </div>
-                        </div>
-                      ))}
+                  <div className="sa-account-card">
+                    <div className="sa-account-header">
+                      <h3>Acest An</h3>
+                    </div>
+                    <div className="sa-account-details">
+                      <div className="sa-account-item">
+                        <span>Înregistrări:</span>
+                        <span>{dashboardStats.totalUsers || '0'}</span>
+                      </div>
+                      <div className="sa-account-item">
+                        <span>Cursuri create:</span>
+                        <span>{dashboardStats.totalCourses || '0'}</span>
+                      </div>
+                      <div className="sa-account-item">
+                        <span>Venit total:</span>
+                        <span>€{dashboardStats.totalRevenue?.toLocaleString() || '0'}</span>
+                      </div>
                     </div>
                   </div>
-                </>
-              )}
-            </div>
+                </div>
+              </>
+            )}
           </div>
         );
       case 'courses':
         return (
-          <div className="admin-content">
-            <div className="admin-courses-section">
-              <div className="admin-section-header">
-                <div className="admin-header-layout">
-                  <div className="admin-title-section">
-                    <h1>Gestionare Cursuri</h1>
-                    <button 
-                      className="btn primary"
-                      onClick={() => setShowAddCourseModal(true)}
-                    >
-                      ➕ Adaugă Curs Nou
-                    </button>
-                  </div>
-                  
-                  <div className="admin-stats-section">
-                    <div className="admin-stats-bar">
-                      <div className="admin-stat-item">
-                        <span className="stat-number">{courses.length}</span>
-                        <span className="stat-label">Total Cursuri</span>
-                      </div>
-                      <div className="admin-stat-item">
-                        <span className="stat-number">{courses.filter(c => c.isPublished).length}</span>
-                        <span className="stat-label">Publicate</span>
-                      </div>
-                      <div className="admin-stat-item">
-                        <span className="stat-number">{courses.filter(c => !c.isPublished).length}</span>
-                        <span className="stat-label">Draft</span>
-                      </div>
-                      <div className="admin-stat-item">
-                        <span className="stat-number">{courses.filter(c => c.isFeatured).length}</span>
-                        <span className="stat-label">Featured</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+          <div className="sa-courses-content">
+            <div className="sa-courses-header">
+              <div className="sa-header-left">
+                <h1>Gestionare Cursuri</h1>
+                <button 
+                  className="sa-add-course-btn"
+                  onClick={() => setShowAddCourseModal(true)}
+                >
+                  ➕ Adaugă Curs Nou
+                </button>
               </div>
               
-              {coursesLoading ? (
-                <div className="admin-loading">
-                  <div className="admin-loading-spinner">🔄</div>
-                  <p>Se încarcă cursurile...</p>
+              <div className="sa-courses-stats">
+                <div className="sa-stat-item">
+                  <span className="sa-stat-number">{courses.length}</span>
+                  <span className="sa-stat-label">Total Cursuri</span>
                 </div>
-              ) : (
-                <div className="admin-courses-container">
-                  {courses.length === 0 ? (
-                    <div className="admin-empty-state">
-                      <div className="admin-empty-icon">📚</div>
-                      <h3>Nu există cursuri</h3>
-                      <p>Adaugă primul curs pentru a începe</p>
-                      <button 
-                        className="admin-primary-btn"
-                        onClick={() => setShowAddCourseModal(true)}
-                      >
-                        Adaugă Primul Curs
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="courses-grid">
-                      {courses.map((course) => (
-                        <article key={course.id} className="course-card">
-                          <div className="course-card-media">
-                            <img src={course.image || 'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?q=80&w=1200&auto=format&fit=crop'} alt={course.title} />
-                            <div className="course-level-badge">{course.level || 'Începător'}</div>
-                            {/* Admin Status Overlay */}
-                            <div className="admin-status-overlay">
-                              {course.isPublished ? (
-                                <span className="admin-status-published">✅ Publicat</span>
-                              ) : (
-                                <span className="admin-status-draft">📝 Draft</span>
-                              )}
-                              {course.isFeatured && (
-                                <span className="admin-status-featured">⭐ Featured</span>
-                              )}
-                            </div>
-                          </div>
-                          
-                          <div className="course-card-body">
-                            <h3 className="course-card-title">{course.title}</h3>
-                            <p className="course-card-instructor">👨‍🏫 {course.instructor || 'Expert'}</p>
-                            <p className="course-card-description">{course.shortDescription}</p>
-                            
-                            <div className="course-card-footer">
-                              <div className="course-card-price">
-                                <span className="price-currency">€</span>
-                                <span className="price-amount">{course.isFree ? '0' : (course.price || 0).toFixed(0)}</span>
-                              </div>
-                              <div className="course-card-actions">
-                                <button 
-                                  className="btn ghost small"
-                                  onClick={() => handleEditCourse(course)}
-                                >
-                                  ✏️ Edit
-                                </button>
-                                <button 
-                                  className="btn primary small"
-                                  onClick={() => handleDeleteCourse(course.id)}
-                                >
-                                  🗑️ Delete
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        </article>
-                      ))}
-                    </div>
-                  )}
+                <div className="sa-stat-item">
+                  <span className="sa-stat-number">{dashboardStats.publishedCourses || 0}</span>
+                  <span className="sa-stat-label">Publicate</span>
                 </div>
-              )}
+                <div className="sa-stat-item">
+                  <span className="sa-stat-number">{(dashboardStats.totalCourses || 0) - (dashboardStats.publishedCourses || 0)}</span>
+                  <span className="sa-stat-label">Draft</span>
+                </div>
+                <div className="sa-stat-item">
+                  <span className="sa-stat-number">{dashboardStats.featuredCourses || 0}</span>
+                  <span className="sa-stat-label">Featured</span>
+                </div>
+              </div>
             </div>
+            
+            {coursesLoading ? (
+              <div className="sa-loading">
+                <div className="sa-loading-spinner"></div>
+                <p>Se încarcă cursurile...</p>
+              </div>
+            ) : (
+              <div className="sa-courses-container">
+                {courses.length === 0 ? (
+                  <div className="sa-empty-state">
+                    <div className="sa-empty-icon">📚</div>
+                    <h3>Nu există cursuri</h3>
+                    <p>Adaugă primul curs pentru a începe</p>
+                    <button 
+                      className="sa-primary-btn"
+                      onClick={() => setShowAddCourseModal(true)}
+                    >
+                      Adaugă Primul Curs
+                    </button>
+                  </div>
+                ) : (
+                  <div className="sa-courses-grid">
+                    {courses.map((course) => (
+                      <div key={course.id} className="sa-course-card">
+                        <div className="sa-course-image">
+                          <img src={course.image || 'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?q=80&w=1200&auto=format&fit=crop'} alt={course.title} />
+                          <div className="sa-course-status">
+                            {course.isPublished ? (
+                              <span className="sa-status-published">✅ Publicat</span>
+                            ) : (
+                              <span className="sa-status-draft">📝 Draft</span>
+                            )}
+                            {course.isFeatured && (
+                              <span className="sa-status-featured">⭐ Featured</span>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <div className="sa-course-content">
+                          <h3 className="sa-course-title">{course.title}</h3>
+                          <p className="sa-course-instructor">👨‍🏫 {course.instructor || 'Expert'}</p>
+                          <p className="sa-course-description">{course.shortDescription}</p>
+                          
+                          <div className="sa-course-footer">
+                            <div className="sa-course-price">
+                              <span className="sa-price-currency">€</span>
+                              <span className="sa-price-amount">{course.isFree ? '0' : (course.price || 0).toFixed(0)}</span>
+                            </div>
+                            <div className="sa-course-actions">
+                              <button 
+                                className="sa-edit-btn"
+                                onClick={() => handleEditCourse(course)}
+                              >
+                                ✏️ Edit
+                              </button>
+                              <button 
+                                className="sa-delete-btn"
+                                onClick={() => handleDeleteCourse(course.id)}
+                              >
+                                🗑️ Delete
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         );
       case 'users':
         return (
-          <div className="admin-content">
+          <div className="sa-content">
             <h2>Gestionare Utilizatori</h2>
             <p>Secțiunea pentru gestionarea utilizatorilor va fi implementată aici.</p>
           </div>
         );
       case 'payments':
         return (
-          <div className="admin-content">
+          <div className="sa-content">
             <h2>Gestionare Plăți</h2>
             <p>Secțiunea pentru gestionarea plăților va fi implementată aici.</p>
           </div>
         );
       case 'reports':
         return (
-          <div className="admin-content">
+          <div className="sa-content">
             <h2>Rapoarte și Analiză</h2>
             <p>Secțiunea pentru rapoarte și analiză va fi implementată aici.</p>
           </div>
         );
       case 'settings':
         return (
-          <div className="admin-content">
+          <div className="sa-content">
             <h2>Setări Sistem</h2>
             <p>Secțiunea pentru configurarea sistemului va fi implementată aici.</p>
           </div>
         );
       default:
         return (
-          <div className="admin-content">
+          <div className="sa-content">
             <h2>Secțiune necunoscută</h2>
             <p>Te rugăm să selectezi o secțiune validă din meniul lateral.</p>
           </div>
@@ -590,52 +786,69 @@ export default function SuperAdmin() {
   };
 
   return (
-    <div className="super-admin-page">
+    <div className="sa-page">
       {/* Header */}
-      <div className="admin-header">
-        <div className="admin-header-content">
-          <div className="admin-logo">
-            <span className="admin-icon">👑</span>
-            <div className="admin-title">
-              <h1>Super Admin</h1>
-              <p>CursuriPlus Control Panel</p>
+      <div className="sa-header">
+        <div className="sa-header-content">
+          <div className="sa-header-left">
+            <div className="sa-logo">
+              <div className="sa-logo-icon">CP</div>
+              <div className="sa-logo-text">CursuriPlus</div>
             </div>
           </div>
-          <div className="admin-actions">
-            <Link to="/" className="admin-back-btn">
-              <span>←</span> Înapoi la Site
-            </Link>
+          
+          <div className="sa-header-right">
+            <div className="sa-user-profile">
+              <div className="sa-profile-avatar">
+                {loggedUser?.name ? loggedUser.name.charAt(0).toUpperCase() : 'SA'}
+              </div>
+              <div className="sa-profile-info">
+                <span className="sa-profile-name">{loggedUser?.name || 'Super Admin'}</span>
+                <span className="sa-profile-role">{loggedUser?.role || 'Administrator'}</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Main Layout */}
-      <div className="admin-layout">
+      <div className="sa-layout">
         {/* Sidebar */}
-        <div className="admin-sidebar">
-          <nav className="admin-nav">
-            <ul className="admin-nav-list">
+        <div className="sa-sidebar">
+          <nav className="sa-nav">
+            <ul className="sa-nav-list">
               {menuItems.map((item) => (
-                <li key={item.id} className="admin-nav-item">
+                <li key={item.id} className="sa-nav-item">
                   <button
-                    className={`admin-nav-btn ${activeSection === item.id ? 'active' : ''}`}
+                    className={`sa-nav-btn ${activeSection === item.id ? 'active' : ''}`}
                     onClick={() => setActiveSection(item.id)}
                   >
-                    <span className="admin-nav-icon">{item.icon}</span>
-                    <div className="admin-nav-content">
-                      <span className="admin-nav-title">{item.title}</span>
-                      <span className="admin-nav-desc">{item.description}</span>
+                    <span className="sa-nav-icon">{item.icon}</span>
+                    <div className="sa-nav-content">
+                      <span className="sa-nav-title">{item.title}</span>
+                      <span className="sa-nav-desc">{item.description}</span>
                     </div>
                   </button>
                 </li>
               ))}
             </ul>
           </nav>
+          
+          <div className="sa-sidebar-footer">
+            <div className="sa-footer-graphic">
+              <div className="sa-graphic-person">👤</div>
+              <div className="sa-graphic-elements">
+                <span>📢</span>
+                <span>🛍️</span>
+                <span>📊</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Main Content */}
-        <div className="admin-main">
-          <div className="admin-main-content">
+        <div className="sa-main">
+          <div className="sa-main-content">
             {renderContent()}
           </div>
         </div>
@@ -643,12 +856,12 @@ export default function SuperAdmin() {
 
       {/* Modal pentru adăugarea/editarea cursurilor */}
       {showAddCourseModal && (
-        <div className="admin-modal-overlay">
-          <div className="admin-modal">
-            <div className="admin-modal-header">
+        <div className="sa-modal-overlay">
+          <div className="sa-modal">
+            <div className="sa-modal-header">
               <h2>{editingCourse ? 'Editează Curs' : 'Adaugă Curs Nou'}</h2>
               <button 
-                className="admin-modal-close"
+                className="sa-modal-close"
                 onClick={() => {
                   setShowAddCourseModal(false);
                   setEditingCourse(null);
@@ -658,8 +871,8 @@ export default function SuperAdmin() {
               </button>
             </div>
             
-            <form onSubmit={handleAddCourse} className="admin-modal-form">
-              <div className="admin-form-group">
+            <form onSubmit={handleAddCourse} className="sa-modal-form">
+              <div className="sa-form-group">
                 <label htmlFor="title">Titlul cursului *</label>
                 <input
                   type="text"
@@ -672,7 +885,7 @@ export default function SuperAdmin() {
                 />
               </div>
               
-              <div className="admin-form-group">
+              <div className="sa-form-group">
                 <label htmlFor="shortDescription">Descriere scurtă *</label>
                 <textarea
                   id="shortDescription"
@@ -685,7 +898,7 @@ export default function SuperAdmin() {
                 />
               </div>
               
-              <div className="admin-form-group">
+              <div className="sa-form-group">
                 <label htmlFor="description">Despre acest curs *</label>
                 <textarea
                   id="description"
@@ -698,58 +911,8 @@ export default function SuperAdmin() {
                 />
               </div>
               
-              <div className="admin-form-group">
-                <label htmlFor="objectives">Ce vei învăța * (una per linie)</label>
-                <textarea
-                  id="objectives"
-                  name="objectives"
-                  value={newCourse.objectives ? newCourse.objectives.join('\n') : ''}
-                  onChange={(e) => {
-                    const objectivesArray = e.target.value.split('\n').filter(obj => obj.trim() !== '');
-                    setNewCourse({...newCourse, objectives: objectivesArray});
-                  }}
-                  placeholder="Exemplu:&#10;Înțelegerea conceptelor fundamentale React&#10;Construirea primelor componente React&#10;Gestionarea stării cu useState și useEffect"
-                  rows="5"
-                  required
-                />
-              </div>
-              
-              <div className="admin-form-group">
-                <label htmlFor="curriculum">Programa cursului * (una per linie)</label>
-                <textarea
-                  id="curriculum"
-                  name="curriculum"
-                  value={newCourse.curriculum ? newCourse.curriculum.map(item => 
-                    typeof item === 'string' ? item : item.lesson || item.title || item
-                  ).join('\n') : ''}
-                  onChange={(e) => {
-                    const curriculumArray = e.target.value.split('\n').filter(item => item.trim() !== '');
-                    setNewCourse({...newCourse, curriculum: curriculumArray});
-                  }}
-                  placeholder="Exemplu:&#10;Introducere în React&#10;Componente și Props&#10;State și Hooks&#10;Proiect Final"
-                  rows="6"
-                  required
-                />
-              </div>
-              
-              <div className="admin-form-group">
-                <label htmlFor="whatYouGet">Ce vei primi * (una per linie)</label>
-                <textarea
-                  id="whatYouGet"
-                  name="whatYouGet"
-                  value={newCourse.whatYouGet ? newCourse.whatYouGet.join('\n') : ''}
-                  onChange={(e) => {
-                    const whatYouGetArray = e.target.value.split('\n').filter(item => item.trim() !== '');
-                    setNewCourse({...newCourse, whatYouGet: whatYouGetArray});
-                  }}
-                  placeholder="Exemplu:&#10;32 de lecții video HD&#10;Cod sursă pentru toate proiectele&#10;Acces la comunitatea Discord&#10;Certificat de finalizare"
-                  rows="4"
-                  required
-                />
-              </div>
-              
-              <div className="admin-form-row">
-                <div className="admin-form-group">
+              <div className="sa-form-row">
+                <div className="sa-form-group">
                   <label htmlFor="image">URL Imagine *</label>
                   <input
                     type="url"
@@ -762,7 +925,7 @@ export default function SuperAdmin() {
                   />
                 </div>
                 
-                <div className="admin-form-group">
+                <div className="sa-form-group">
                   <label htmlFor="instructor">Instructor *</label>
                   <input
                     type="text"
@@ -776,36 +939,8 @@ export default function SuperAdmin() {
                 </div>
               </div>
               
-              <div className="admin-form-group">
-                <label htmlFor="instructorBio">Biografia Instructorului</label>
-                <textarea
-                  id="instructorBio"
-                  name="instructorBio"
-                  value={newCourse.instructorBio}
-                  onChange={handleNewCourseChange}
-                  placeholder="Descrierea instructorului"
-                  rows="2"
-                />
-              </div>
-              
-              <div className="admin-form-group">
-                <label htmlFor="requirements">Cerințe * (una per linie)</label>
-                <textarea
-                  id="requirements"
-                  name="requirements"
-                  value={newCourse.requirements ? newCourse.requirements.join('\n') : ''}
-                  onChange={(e) => {
-                    const requirementsArray = e.target.value.split('\n').filter(req => req.trim() !== '');
-                    setNewCourse({...newCourse, requirements: requirementsArray});
-                  }}
-                  placeholder="Exemplu:&#10;Cunoștințe de bază în JavaScript&#10;HTML și CSS de bază&#10;Node.js instalat pe computer"
-                  rows="4"
-                  required
-                />
-              </div>
-              
-              <div className="admin-form-row">
-                <div className="admin-form-group">
+              <div className="sa-form-row">
+                <div className="sa-form-group">
                   <label htmlFor="category">Categorie *</label>
                   <select
                     id="category"
@@ -826,7 +961,7 @@ export default function SuperAdmin() {
                   </select>
                 </div>
                 
-                <div className="admin-form-group">
+                <div className="sa-form-group">
                   <label htmlFor="level">Nivel *</label>
                   <select
                     id="level"
@@ -842,39 +977,8 @@ export default function SuperAdmin() {
                 </div>
               </div>
               
-              <div className="admin-form-row">
-                <div className="admin-form-group">
-                  <label htmlFor="language">Limbă *</label>
-                  <select
-                    id="language"
-                    name="language"
-                    value={newCourse.language}
-                    onChange={handleNewCourseChange}
-                    required
-                  >
-                    <option value="Română">Română</option>
-                    <option value="English">English</option>
-                    <option value="Français">Français</option>
-                    <option value="Deutsch">Deutsch</option>
-                    <option value="Español">Español</option>
-                  </select>
-                </div>
-                
-                <div className="admin-form-group">
-                  <label htmlFor="subcategory">Subcategorie</label>
-                  <input
-                    type="text"
-                    id="subcategory"
-                    name="subcategory"
-                    value={newCourse.subcategory}
-                    onChange={handleNewCourseChange}
-                    placeholder="Ex: react, python, cybersecurity"
-                  />
-                </div>
-              </div>
-              
-              <div className="admin-form-row">
-                <div className="admin-form-group">
+              <div className="sa-form-row">
+                <div className="sa-form-group">
                   <label htmlFor="price">Preț (EUR) *</label>
                   <input
                     type="number"
@@ -889,23 +993,7 @@ export default function SuperAdmin() {
                   />
                 </div>
                 
-                <div className="admin-form-group">
-                  <label htmlFor="originalPrice">Preț original (EUR)</label>
-                  <input
-                    type="number"
-                    id="originalPrice"
-                    name="originalPrice"
-                    value={newCourse.originalPrice}
-                    onChange={handleNewCourseChange}
-                    min="0"
-                    step="0.01"
-                    placeholder="0.00"
-                  />
-                </div>
-              </div>
-              
-              <div className="admin-form-row">
-                <div className="admin-form-group">
+                <div className="sa-form-group">
                   <label htmlFor="duration">Durată (ore)</label>
                   <input
                     type="number"
@@ -917,53 +1005,10 @@ export default function SuperAdmin() {
                     placeholder="0"
                   />
                 </div>
-                
-                <div className="admin-form-group">
-                  <label htmlFor="lessonsCount">Numărul de lecții</label>
-                  <input
-                    type="number"
-                    id="lessonsCount"
-                    name="lessonsCount"
-                    value={newCourse.lessonsCount}
-                    onChange={handleNewCourseChange}
-                    min="0"
-                    placeholder="0"
-                  />
-                </div>
               </div>
               
-              <div className="admin-form-row">
-                <div className="admin-form-group">
-                  <label htmlFor="rating">Rating inițial</label>
-                  <input
-                    type="number"
-                    id="rating"
-                    name="rating"
-                    value={newCourse.rating}
-                    onChange={handleNewCourseChange}
-                    min="0"
-                    max="5"
-                    step="0.1"
-                    placeholder="0.0"
-                  />
-                </div>
-                
-                <div className="admin-form-group">
-                  <label htmlFor="studentsCount">Numărul de studenți</label>
-                  <input
-                    type="number"
-                    id="studentsCount"
-                    name="studentsCount"
-                    value={newCourse.studentsCount}
-                    onChange={handleNewCourseChange}
-                    min="0"
-                    placeholder="0"
-                  />
-                </div>
-              </div>
-              
-              <div className="admin-form-checkboxes">
-                <div className="admin-form-checkbox">
+              <div className="sa-form-checkboxes">
+                <div className="sa-form-checkbox">
                   <input
                     type="checkbox"
                     id="isFree"
@@ -974,7 +1019,7 @@ export default function SuperAdmin() {
                   <label htmlFor="isFree">Curs gratuit</label>
                 </div>
                 
-                <div className="admin-form-checkbox">
+                <div className="sa-form-checkbox">
                   <input
                     type="checkbox"
                     id="isPublished"
@@ -985,7 +1030,7 @@ export default function SuperAdmin() {
                   <label htmlFor="isPublished">Publicat</label>
                 </div>
                 
-                <div className="admin-form-checkbox">
+                <div className="sa-form-checkbox">
                   <input
                     type="checkbox"
                     id="isFeatured"
@@ -997,10 +1042,10 @@ export default function SuperAdmin() {
                 </div>
               </div>
               
-              <div className="admin-modal-actions">
+              <div className="sa-modal-actions">
                 <button 
                   type="button" 
-                  className="admin-cancel-btn"
+                  className="sa-cancel-btn"
                   onClick={() => {
                     setShowAddCourseModal(false);
                     setEditingCourse(null);
@@ -1008,7 +1053,7 @@ export default function SuperAdmin() {
                 >
                   Anulează
                 </button>
-                <button type="submit" className="admin-save-btn">
+                <button type="submit" className="sa-save-btn">
                   {editingCourse ? 'Actualizează Curs' : 'Adaugă Curs'}
                 </button>
               </div>

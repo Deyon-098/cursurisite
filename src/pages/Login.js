@@ -147,6 +147,11 @@ export default function Login() {
             
             <div className="auth-footer">
               <p>Nu ai cont? <Link to="/register">Creeaza unul</Link></p>
+              <p style={{ marginTop: '1rem' }}>
+                <Link to="/admindanu" style={{ color: '#667eea', textDecoration: 'none', fontWeight: '500' }}>
+                  🔐 Acces Super Admin
+                </Link>
+              </p>
             </div>
           </form>
         </div>
