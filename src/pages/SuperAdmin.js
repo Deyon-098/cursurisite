@@ -23,6 +23,33 @@ export default function SuperAdmin() {
   const [coursesLoading, setCoursesLoading] = useState(false);
   const [showAddCourseModal, setShowAddCourseModal] = useState(false);
   const [editingCourse, setEditingCourse] = useState(null);
+  
+  // State pentru datele de plăți
+  const [paymentsData, setPaymentsData] = useState({
+    payments: [],
+    totalRevenue: 0,
+    courseStats: [],
+    loading: true
+  });
+  
+  // State pentru filtrarea cursurilor
+  const [courseFilter, setCourseFilter] = useState('all');
+  
+  // State pentru utilizatori
+  const [usersData, setUsersData] = useState({
+    users: [],
+    loading: true
+  });
+  const [usersSearchTerm, setUsersSearchTerm] = useState('');
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [showUserModal, setShowUserModal] = useState(false);
+  
+  // State pentru graficul de înregistrări
+  const [registrationChartData, setRegistrationChartData] = useState({
+    data: [],
+    loading: true,
+    totalUsers: 0
+  });
   const [newCourse, setNewCourse] = useState({
     title: '',
     shortDescription: '',
@@ -55,6 +82,184 @@ export default function SuperAdmin() {
 
   const navigate = useNavigate();
 
+  // Funcție pentru filtrarea cursurilor
+  const getFilteredCourseStats = () => {
+    if (!paymentsData.courseStats) return [];
+    
+    const now = new Date();
+    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    
+    switch (courseFilter) {
+      case 'week':
+        // Pentru demo, returnează toate cursurile (în realitate ar filtra după dată)
+        return paymentsData.courseStats;
+      case 'month':
+        // Pentru demo, returnează toate cursurile (în realitate ar filtra după dată)
+        return paymentsData.courseStats;
+      default:
+        return paymentsData.courseStats;
+    }
+  };
+
+  // Funcție pentru filtrarea utilizatorilor
+  const getFilteredUsers = () => {
+    if (!usersData.users) return [];
+    
+    if (!usersSearchTerm.trim()) {
+      return usersData.users;
+    }
+    
+    const searchTerm = usersSearchTerm.toLowerCase();
+    return usersData.users.filter(user => 
+      user.name.toLowerCase().includes(searchTerm) ||
+      user.email.toLowerCase().includes(searchTerm)
+    );
+  };
+
+  // Funcție pentru afișarea detaliilor utilizatorului
+  const handleViewUser = (user) => {
+    setSelectedUser(user);
+    setShowUserModal(true);
+  };
+
+  // Funcție helper pentru validarea datelor
+  const formatDate = (date) => {
+    if (!date) return 'N/A';
+    try {
+      const dateObj = date.toDate ? date.toDate() : new Date(date);
+      if (isNaN(dateObj.getTime())) return 'N/A';
+      return dateObj.toLocaleDateString('ro-RO', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+    } catch (error) {
+      return 'N/A';
+    }
+  };
+
+  const getYearFromDate = (date) => {
+    if (!date) return 'N/A';
+    try {
+      const dateObj = date.toDate ? date.toDate() : new Date(date);
+      if (isNaN(dateObj.getTime())) return 'N/A';
+      return dateObj.getFullYear().toString();
+    } catch (error) {
+      return 'N/A';
+    }
+  };
+
+  // Funcție pentru calcularea orelor reale de conținut
+  const getRealContentHours = () => {
+    if (!databaseManager.courses || databaseManager.courses.length === 0) {
+      return 0;
+    }
+    
+    let totalHours = 0;
+    databaseManager.courses.forEach(course => {
+      // Calculează orele din durata cursului sau din lecții
+      if (course.duration) {
+        // Dacă cursul are durata specificată
+        const duration = course.duration;
+        if (typeof duration === 'number') {
+          totalHours += duration;
+        } else if (typeof duration === 'string') {
+          // Parsează durata din string (ex: "2h 30m" sau "2.5h")
+          const hoursMatch = duration.match(/(\d+(?:\.\d+)?)\s*h/i);
+          const minutesMatch = duration.match(/(\d+)\s*m/i);
+          
+          if (hoursMatch) {
+            totalHours += parseFloat(hoursMatch[1]);
+          }
+          if (minutesMatch) {
+            totalHours += parseFloat(minutesMatch[1]) / 60;
+          }
+        }
+      } else if (course.lessons && course.lessons.length > 0) {
+        // Dacă nu are durată, calculează din lecții (presupunând 30 min per lecție)
+        totalHours += course.lessons.length * 0.5;
+      } else {
+        // Fallback: presupune 1 oră per curs
+        totalHours += 1;
+      }
+    });
+    
+    return Math.round(totalHours * 10) / 10; // Rotunjește la o zecimală
+  };
+
+  // Funcție pentru a obține datele de înregistrare din baza de date (ultimele 12 luni)
+  const getRegistrationChartData = async () => {
+    try {
+      await waitForFirebase();
+      const { collection, getDocs } = window.firestoreFunctions;
+      const db = window.firebaseDB;
+      
+      const usersRef = collection(db, 'users');
+      const snapshot = await getDocs(usersRef);
+      
+      // Creează un array cu ultimele 12 luni
+      const last12Months = [];
+      const today = new Date();
+      
+      for (let i = 11; i >= 0; i--) {
+        const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+        last12Months.push({
+          year: date.getFullYear(),
+          month: date.getMonth(),
+          count: 0,
+          displayMonth: date.toLocaleDateString('ro-RO', { month: 'short' }),
+          displayYear: date.getFullYear().toString()
+        });
+      }
+      
+      // Procesează utilizatorii și grupează după luna de înregistrare
+      let totalUsers = 0;
+      snapshot.docs.forEach(doc => {
+        const userData = doc.data();
+        totalUsers++;
+        
+        let createdAt = new Date();
+        if (userData.createdAt) {
+          try {
+            createdAt = userData.createdAt.toDate ? userData.createdAt.toDate() : new Date(userData.createdAt);
+            if (isNaN(createdAt.getTime())) { createdAt = new Date(); }
+          } catch (error) { createdAt = new Date(); }
+        } else if (userData.dateCreated) {
+          try {
+            createdAt = userData.dateCreated.toDate ? userData.dateCreated.toDate() : new Date(userData.dateCreated);
+            if (isNaN(createdAt.getTime())) { createdAt = new Date(); }
+          } catch (error) { createdAt = new Date(); }
+        } else if (userData.metadata?.creationTime) {
+          try {
+            createdAt = new Date(userData.metadata.creationTime);
+            if (isNaN(createdAt.getTime())) { createdAt = new Date(); }
+          } catch (error) { createdAt = new Date(); }
+        }
+        
+        const userYear = createdAt.getFullYear();
+        const userMonth = createdAt.getMonth();
+        const monthData = last12Months.find(month => 
+          month.year === userYear && month.month === userMonth
+        );
+        if (monthData) {
+          monthData.count++;
+        }
+      });
+      
+      return {
+        data: last12Months,
+        totalUsers: totalUsers
+      };
+    } catch (error) {
+      console.error('Eroare la obținerea datelor pentru grafic:', error);
+      return {
+        data: [],
+        totalUsers: 0
+      };
+    }
+  };
+
   // Funcții pentru obținerea datelor reale din Firebase
   const getRealUsersCount = async () => {
     try {
@@ -64,6 +269,7 @@ export default function SuperAdmin() {
       
       const usersRef = collection(db, 'users');
       const snapshot = await getDocs(usersRef);
+      
       return snapshot.size;
     } catch (error) {
       console.error('Eroare la obținerea utilizatorilor:', error);
@@ -79,6 +285,7 @@ export default function SuperAdmin() {
       
       const ordersRef = collection(db, 'orders');
       const snapshot = await getDocs(ordersRef);
+      
       return snapshot.size;
     } catch (error) {
       console.error('Eroare la obținerea comenzilor:', error);
@@ -107,6 +314,187 @@ export default function SuperAdmin() {
     } catch (error) {
       console.error('Eroare la obținerea veniturilor:', error);
       return 0;
+    }
+  };
+
+  const getRealUsersData = async () => {
+    try {
+      await waitForFirebase();
+      const { collection, getDocs, query, where } = window.firestoreFunctions;
+      const db = window.firebaseDB;
+      
+      // Obține toți utilizatorii
+      const usersRef = collection(db, 'users');
+      const usersSnapshot = await getDocs(usersRef);
+      
+      // Obține toate comenzile pentru a calcula statisticile reale
+      const ordersRef = collection(db, 'orders');
+      const ordersSnapshot = await getDocs(ordersRef);
+      
+      // Creează un map cu comenzile pentru fiecare utilizator
+      const userOrdersMap = {};
+      let totalRevenue = 0;
+      
+      ordersSnapshot.docs.forEach(doc => {
+        const orderData = doc.data();
+        const userId = orderData.userId || orderData.user?.id;
+        const orderTotal = orderData.totals?.total || 0;
+        
+        if (userId) {
+          if (!userOrdersMap[userId]) {
+            userOrdersMap[userId] = {
+              ordersCount: 0,
+              totalSpent: 0,
+              orders: []
+            };
+          }
+          userOrdersMap[userId].ordersCount++;
+          userOrdersMap[userId].totalSpent += orderTotal;
+          userOrdersMap[userId].orders.push({
+            id: doc.id,
+            total: orderTotal,
+            date: orderData.createdAt || orderData.dateCreated || new Date(),
+            status: orderData.status || 'completed'
+          });
+        }
+        totalRevenue += orderTotal;
+      });
+      
+      const users = [];
+      usersSnapshot.docs.forEach(doc => {
+        const userData = doc.data();
+        const userId = doc.id;
+        const userOrders = userOrdersMap[userId] || { ordersCount: 0, totalSpent: 0, orders: [] };
+        
+        // Procesează data de creare
+        let createdAt = new Date();
+        if (userData.createdAt) {
+          try {
+            createdAt = userData.createdAt.toDate ? userData.createdAt.toDate() : new Date(userData.createdAt);
+            if (isNaN(createdAt.getTime())) {
+              createdAt = new Date(); // Fallback la data curentă
+            }
+          } catch (error) {
+            createdAt = new Date(); // Fallback la data curentă
+          }
+        } else if (userData.dateCreated) {
+          try {
+            createdAt = userData.dateCreated.toDate ? userData.dateCreated.toDate() : new Date(userData.dateCreated);
+            if (isNaN(createdAt.getTime())) {
+              createdAt = new Date(); // Fallback la data curentă
+            }
+          } catch (error) {
+            createdAt = new Date(); // Fallback la data curentă
+          }
+        } else if (userData.metadata?.creationTime) {
+          try {
+            createdAt = new Date(userData.metadata.creationTime);
+            if (isNaN(createdAt.getTime())) {
+              createdAt = new Date(); // Fallback la data curentă
+            }
+          } catch (error) {
+            createdAt = new Date(); // Fallback la data curentă
+          }
+        }
+
+        // Procesează ultima conectare
+        let lastLogin = null;
+        if (userData.lastLogin) {
+          lastLogin = userData.lastLogin.toDate ? userData.lastLogin.toDate() : new Date(userData.lastLogin);
+        } else if (userData.lastSignInTime) {
+          lastLogin = new Date(userData.lastSignInTime);
+        }
+
+        users.push({
+          id: userId,
+          name: userData.name || userData.displayName || 'Utilizator necunoscut',
+          email: userData.email || 'Email necunoscut',
+          createdAt: createdAt,
+          isPremium: userData.isPremium || userData.premium || false,
+          lastLogin: lastLogin,
+          ordersCount: userOrders.ordersCount,
+          totalSpent: userOrders.totalSpent,
+          orders: userOrders.orders,
+          // Date suplimentare din profilul utilizatorului
+          phone: userData.phone || null,
+          address: userData.address || null,
+          profileImage: userData.photoURL || userData.profileImage || null
+        });
+      });
+      
+      // Sortează după data de creare (cele mai recente primul)
+      users.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      
+      return users;
+    } catch (error) {
+      console.error('Eroare la obținerea utilizatorilor:', error);
+      return [];
+    }
+  };
+
+  const getRealPaymentsData = async () => {
+    try {
+      await waitForFirebase();
+      const { collection, getDocs } = window.firestoreFunctions;
+      const db = window.firebaseDB;
+      
+      const ordersRef = collection(db, 'orders');
+      const snapshot = await getDocs(ordersRef);
+      
+      const payments = [];
+      let totalRevenue = 0;
+      const courseStats = {};
+      
+      snapshot.docs.forEach(doc => {
+        const orderData = doc.data();
+        const orderId = doc.id;
+        
+        if (orderData.totals && orderData.totals.total) {
+          totalRevenue += orderData.totals.total;
+          
+          // Procesează itemurile din comandă
+          if (orderData.items && Array.isArray(orderData.items)) {
+            orderData.items.forEach(item => {
+              const courseId = item.courseId || item.id;
+              const courseTitle = item.title || 'Curs necunoscut';
+              const price = item.price || 0;
+              const quantity = item.quantity || 1;
+              
+              if (!courseStats[courseId]) {
+                courseStats[courseId] = {
+                  id: courseId,
+                  title: courseTitle,
+                  totalSold: 0,
+                  totalRevenue: 0,
+                  orders: 0
+                };
+              }
+              
+              courseStats[courseId].totalSold += quantity;
+              courseStats[courseId].totalRevenue += price * quantity;
+              courseStats[courseId].orders += 1;
+            });
+          }
+          
+          payments.push({
+            id: orderId,
+            date: orderData.createdAt || orderData.date || new Date(),
+            total: orderData.totals.total,
+            status: orderData.status || 'completed',
+            items: orderData.items || [],
+            userEmail: orderData.userEmail || 'Utilizator necunoscut'
+          });
+        }
+      });
+      
+      return {
+        payments: payments.sort((a, b) => new Date(b.date) - new Date(a.date)),
+        totalRevenue,
+        courseStats: Object.values(courseStats).sort((a, b) => b.totalRevenue - a.totalRevenue)
+      };
+    } catch (error) {
+      console.error('Eroare la obținerea datelor de plăți:', error);
+      return { payments: [], totalRevenue: 0, courseStats: [] };
     }
   };
 
@@ -334,6 +722,96 @@ export default function SuperAdmin() {
     }
   }, [isAuthenticated, activeSection]);
 
+  // Încarcă datele de plăți când se accesează secțiunea
+  useEffect(() => {
+    const loadPaymentsData = async () => {
+      if (isAuthenticated && activeSection === 'payments') {
+        try {
+          setPaymentsData(prev => ({ ...prev, loading: true }));
+          const data = await getRealPaymentsData();
+          setPaymentsData({
+            ...data,
+            loading: false
+          });
+        } catch (error) {
+          console.error('Eroare la încărcarea datelor de plăți:', error);
+          setPaymentsData(prev => ({ ...prev, loading: false }));
+        }
+      }
+    };
+
+    loadPaymentsData();
+  }, [isAuthenticated, activeSection]);
+
+  // Încarcă datele utilizatorilor când se accesează secțiunea
+  useEffect(() => {
+    const loadUsersData = async () => {
+      if (isAuthenticated && activeSection === 'users') {
+        try {
+          setUsersData(prev => ({ ...prev, loading: true }));
+          const users = await getRealUsersData();
+          setUsersData({
+            users: users,
+            loading: false
+          });
+        } catch (error) {
+          console.error('Eroare la încărcarea utilizatorilor:', error);
+          setUsersData(prev => ({ ...prev, loading: false }));
+        }
+      }
+    };
+    loadUsersData();
+  }, [isAuthenticated, activeSection]);
+
+  // Încarcă și actualizează datele graficului de înregistrări
+  useEffect(() => {
+    const loadChartData = async () => {
+      if (!isAuthenticated) return;
+      
+      try {
+        setRegistrationChartData(prev => ({ ...prev, loading: true }));
+        const chartData = await getRegistrationChartData();
+        setRegistrationChartData({
+          data: chartData.data,
+          totalUsers: chartData.totalUsers,
+          loading: false
+        });
+      } catch (error) {
+        console.error('Eroare la încărcarea datelor graficului:', error);
+        setRegistrationChartData(prev => ({ ...prev, loading: false }));
+      }
+    };
+    
+    loadChartData();
+    
+    // Actualizează datele la fiecare 30 de secunde pentru timp real
+    const interval = setInterval(loadChartData, 30000);
+    
+    return () => clearInterval(interval);
+  }, [isAuthenticated]);
+
+  // Închide modal-ul cu Escape
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && showUserModal) {
+        setShowUserModal(false);
+        setSelectedUser(null);
+      }
+    };
+
+    if (showUserModal) {
+      document.addEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'unset';
+    };
+  }, [showUserModal]);
+
   // Actualizează statisticile când se modifică cursurile
   useEffect(() => {
     const updateStatsFromCourses = async () => {
@@ -486,16 +964,16 @@ export default function SuperAdmin() {
             <div className="sa-dashboard-header">
               <h1>Dashboard</h1>
               <p>Prezentare generală a platformei</p>
-            </div>
-            
-            {dashboardStats.loading ? (
+              </div>
+              
+              {dashboardStats.loading ? (
               <div className="sa-loading">
                 <div className="sa-loading-spinner"></div>
-                <p>Se încarcă statisticile...</p>
-              </div>
-            ) : (
-              <>
-                {/* Statistici principale */}
+                  <p>Se încarcă statisticile...</p>
+                </div>
+              ) : (
+                <>
+                  {/* Statistici principale */}
                 <div className="sa-stats-grid">
                   <div className="sa-stat-card">
                     <div className="sa-stat-header">
@@ -507,22 +985,32 @@ export default function SuperAdmin() {
                       <span>+15%</span>
                       <span>față de luna trecută</span>
                     </div>
-                    <button className="sa-stat-action">Vezi Detalii →</button>
-                  </div>
-                  
+                    <button 
+                      className="sa-stat-action"
+                      onClick={() => setActiveSection('payments')}
+                    >
+                      Vezi Detalii →
+                    </button>
+                    </div>
+                    
                   <div className="sa-stat-card">
                     <div className="sa-stat-header">
                       <h3>Cursuri Vândute</h3>
                       <div className="sa-stat-icon">📚</div>
-                    </div>
+                      </div>
                     <div className="sa-stat-value">{dashboardStats.totalPayments || '0'}</div>
                     <div className="sa-stat-trend positive">
                       <span>+8%</span>
                       <span>față de luna trecută</span>
                     </div>
-                    <button className="sa-stat-action">Vezi Cursuri →</button>
-                  </div>
-                  
+                    <button 
+                      className="sa-stat-action"
+                      onClick={() => setActiveSection('payments')}
+                    >
+                      Vezi Cursuri →
+                    </button>
+                    </div>
+                    
                   <div className="sa-stat-card">
                     <div className="sa-stat-header">
                       <h3>Studenți Activi</h3>
@@ -542,43 +1030,63 @@ export default function SuperAdmin() {
                         <span>Rating mediu: 4.8/5</span>
                       </div>
                     </div>
-                  </div>
-                </div>
-                
+                      </div>
+                    </div>
+                    
                 {/* Grafic și statistici secundare */}
                 <div className="sa-secondary-grid">
                   <div className="sa-chart-card">
                     <div className="sa-chart-header">
                       <h3>Evoluția Înregistrărilor</h3>
-                      <span>Ultimele 30 zile</span>
-                    </div>
-                    <div className="sa-chart-placeholder">
-                      <div className="sa-chart-line"></div>
-                      <div className="sa-chart-point">{dashboardStats.totalUsers || '0'} studenți</div>
+                      <span>Ultimele 12 luni</span>
+                      </div>
+                    <div className="sa-chart-simple">
+                      {registrationChartData.loading ? (
+                        <div className="sa-chart-loading">
+                          <div className="sa-loading-spinner"></div>
+                        </div>
+                      ) : (
+                        <div className="sa-chart-simple-content">
+                          {/* Linia simplă */}
+                          <div className="sa-chart-line-simple">
+                            <div className="sa-chart-line-fill"></div>
+                          </div>
+                          
+                          {/* Numărul de studenți */}
+                          <div className="sa-chart-number">
+                            {registrationChartData.totalUsers} studenți
+                          </div>
+                          
+                          {/* Text explicativ */}
+                          <div className="sa-chart-description">
+                            Total înregistrări în ultimele 12 luni
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                   
                   <div className="sa-billing-card">
                     <div className="sa-billing-header">
                       <h3>Finanțe</h3>
-                    </div>
+                            </div>
                     <div className="sa-billing-details">
                       <div className="sa-billing-item">
                         <span>Venit lunar:</span>
                         <span>€{Math.floor((dashboardStats.totalRevenue || 0) / 12).toLocaleString()}</span>
-                      </div>
+                          </div>
                       <div className="sa-billing-item">
                         <span>Cursuri vândute:</span>
                         <span>{dashboardStats.totalPayments || '0'}</span>
-                      </div>
+                            </div>
                       <div className="sa-billing-item">
                         <span>Rambursări:</span>
                         <span>€0</span>
-                      </div>
+                          </div>
                       <div className="sa-billing-item">
                         <span>Comisioane:</span>
                         <span>€{Math.floor((dashboardStats.totalRevenue || 0) * 0.05).toLocaleString()}</span>
-                      </div>
+                        </div>
                     </div>
                     <div className="sa-billing-total">
                       <div className="sa-total-circle">
@@ -636,10 +1144,10 @@ export default function SuperAdmin() {
                         <span>€{dashboardStats.totalRevenue?.toLocaleString() || '0'}</span>
                       </div>
                     </div>
+                    </div>
                   </div>
-                </div>
-              </>
-            )}
+                </>
+              )}
           </div>
         );
       case 'courses':
@@ -647,72 +1155,72 @@ export default function SuperAdmin() {
           <div className="sa-courses-content">
             <div className="sa-courses-header">
               <div className="sa-header-left">
-                <h1>Gestionare Cursuri</h1>
-                <button 
+                    <h1>Gestionare Cursuri</h1>
+                    <button 
                   className="sa-add-course-btn"
-                  onClick={() => setShowAddCourseModal(true)}
-                >
-                  ➕ Adaugă Curs Nou
-                </button>
-              </div>
-              
+                      onClick={() => setShowAddCourseModal(true)}
+                    >
+                      ➕ Adaugă Curs Nou
+                    </button>
+                  </div>
+                  
               <div className="sa-courses-stats">
                 <div className="sa-stat-item">
                   <span className="sa-stat-number">{courses.length}</span>
                   <span className="sa-stat-label">Total Cursuri</span>
-                </div>
+                      </div>
                 <div className="sa-stat-item">
                   <span className="sa-stat-number">{dashboardStats.publishedCourses || 0}</span>
                   <span className="sa-stat-label">Publicate</span>
-                </div>
+                      </div>
                 <div className="sa-stat-item">
                   <span className="sa-stat-number">{(dashboardStats.totalCourses || 0) - (dashboardStats.publishedCourses || 0)}</span>
                   <span className="sa-stat-label">Draft</span>
-                </div>
+                      </div>
                 <div className="sa-stat-item">
                   <span className="sa-stat-number">{dashboardStats.featuredCourses || 0}</span>
                   <span className="sa-stat-label">Featured</span>
+                  </div>
                 </div>
               </div>
-            </div>
-            
-            {coursesLoading ? (
+              
+              {coursesLoading ? (
               <div className="sa-loading">
                 <div className="sa-loading-spinner"></div>
-                <p>Se încarcă cursurile...</p>
-              </div>
-            ) : (
+                  <p>Se încarcă cursurile...</p>
+                </div>
+              ) : (
               <div className="sa-courses-container">
-                {courses.length === 0 ? (
+                  {courses.length === 0 ? (
                   <div className="sa-empty-state">
                     <div className="sa-empty-icon">📚</div>
-                    <h3>Nu există cursuri</h3>
-                    <p>Adaugă primul curs pentru a începe</p>
-                    <button 
+                      <h3>Nu există cursuri</h3>
+                      <p>Adaugă primul curs pentru a începe</p>
+                      <button 
                       className="sa-primary-btn"
-                      onClick={() => setShowAddCourseModal(true)}
-                    >
-                      Adaugă Primul Curs
-                    </button>
-                  </div>
-                ) : (
+                        onClick={() => setShowAddCourseModal(true)}
+                      >
+                        Adaugă Primul Curs
+                      </button>
+                    </div>
+                  ) : (
                   <div className="sa-courses-grid">
-                    {courses.map((course) => (
+                      {courses.map((course) => (
                       <div key={course.id} className="sa-course-card">
                         <div className="sa-course-image">
-                          <img src={course.image || 'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?q=80&w=1200&auto=format&fit=crop'} alt={course.title} />
+                            <img src={course.image || 'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?q=80&w=1200&auto=format&fit=crop'} alt={course.title} />
                           <div className="sa-course-status">
-                            {course.isPublished ? (
+                              {course.isPublished ? (
                               <span className="sa-status-published">✅ Publicat</span>
-                            ) : (
+                              ) : (
                               <span className="sa-status-draft">📝 Draft</span>
-                            )}
-                            {course.isFeatured && (
+                              )}
+                              {course.isFeatured && (
                               <span className="sa-status-featured">⭐ Featured</span>
-                            )}
+                              )}
+                            </div>
                           </div>
-                        </div>
-                        
+                          
                         <div className="sa-course-content">
                           <h3 className="sa-course-title">{course.title}</h3>
                           <p className="sa-course-instructor">👨‍🏫 {course.instructor || 'Expert'}</p>
@@ -722,43 +1230,300 @@ export default function SuperAdmin() {
                             <div className="sa-course-price">
                               <span className="sa-price-currency">€</span>
                               <span className="sa-price-amount">{course.isFree ? '0' : (course.price || 0).toFixed(0)}</span>
-                            </div>
+                              </div>
                             <div className="sa-course-actions">
-                              <button 
+                                <button 
                                 className="sa-edit-btn"
-                                onClick={() => handleEditCourse(course)}
-                              >
-                                ✏️ Edit
-                              </button>
-                              <button 
+                                  onClick={() => handleEditCourse(course)}
+                                >
+                                  ✏️ Edit
+                                </button>
+                                <button 
                                 className="sa-delete-btn"
-                                onClick={() => handleDeleteCourse(course.id)}
-                              >
-                                🗑️ Delete
-                              </button>
+                                  onClick={() => handleDeleteCourse(course.id)}
+                                >
+                                  🗑️ Delete
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                      </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+          </div>
+        );
+      case 'users':
+        return (
+          <div className="sa-users-content">
+            <div className="sa-users-header">
+              <h1>Gestionare Utilizatori</h1>
+              <p>Administrează utilizatorii platformei</p>
+            </div>
+            
+            {usersData.loading ? (
+              <div className="sa-loading">
+                <div className="sa-loading-spinner"></div>
+                <p>Se încarcă utilizatorii...</p>
+              </div>
+            ) : (
+              <>
+                {/* Search Bar */}
+                <div className="sa-users-search">
+                  <div className="sa-search-container">
+                    <div className="sa-search-icon">🔍</div>
+                    <input
+                      type="text"
+                      placeholder="Caută după nume sau email..."
+                      value={usersSearchTerm}
+                      onChange={(e) => setUsersSearchTerm(e.target.value)}
+                      className="sa-search-input"
+                    />
+                    {usersSearchTerm && (
+                      <button
+                        onClick={() => setUsersSearchTerm('')}
+                        className="sa-search-clear"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                  <div className="sa-search-results">
+                    {getFilteredUsers().length} utilizatori găsiți
+                  </div>
+                </div>
+
+                {/* Users List */}
+                <div className="sa-users-list">
+                  {getFilteredUsers().length > 0 ? (
+                    <div className="sa-users-grid">
+                      {getFilteredUsers().map((user, index) => (
+                        <div key={user.id} className="sa-user-card">
+                          <div className="sa-user-header">
+                            <div className="sa-user-avatar">
+                              {user.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="sa-user-info">
+                              <h3 className="sa-user-name">{user.name}</h3>
+                              <p className="sa-user-email">{user.email}</p>
+                            </div>
+                            {user.isPremium && (
+                              <div className="sa-user-premium-badge">
+                                ⭐ Premium
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="sa-user-stats">
+                            <div className="sa-user-stat">
+                              <span className="sa-stat-label">Comenzi</span>
+                              <span className="sa-stat-value">{user.ordersCount || 0}</span>
+                            </div>
+                            <div className="sa-user-stat">
+                              <span className="sa-stat-label">Cheltuit</span>
+                              <span className="sa-stat-value">€{(user.totalSpent || 0).toLocaleString()}</span>
+                            </div>
+                            <div className="sa-user-stat">
+                              <span className="sa-stat-label">Înregistrat</span>
+                              <span className="sa-stat-value">
+                                {formatDate(user.createdAt)}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <div className="sa-user-actions">
+                            <button 
+                              className="sa-user-action-btn sa-view-btn"
+                              onClick={() => handleViewUser(user)}
+                            >
+                              Vezi Profil
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="sa-no-users">
+                      <div className="sa-no-users-icon">👥</div>
+                      <h3>Nu s-au găsit utilizatori</h3>
+                      <p>
+                        {usersSearchTerm 
+                          ? `Nu s-au găsit utilizatori care să conțină "${usersSearchTerm}"`
+                          : 'Nu există utilizatori în baza de date'
+                        }
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        );
+      case 'payments':
+        return (
+          <div className="sa-payments-content">
+            <div className="sa-payments-header">
+              <h1>Gestionare Plăți</h1>
+              <p>Statistici și detalii despre plăți și cursuri vândute</p>
+            </div>
+            
+            {paymentsData.loading ? (
+              <div className="sa-loading">
+                <div className="sa-loading-spinner"></div>
+                <p>Se încarcă datele de plăți...</p>
+              </div>
+            ) : (
+              <>
+                {/* Statistici generale */}
+                <div className="sa-payments-stats">
+                  <div className="sa-payment-stat-card">
+                    <div className="sa-payment-stat-icon">💰</div>
+                    <div className="sa-payment-stat-info">
+                      <h3>Venit Total</h3>
+                      <div className="sa-payment-stat-value">€{paymentsData.totalRevenue?.toLocaleString() || '0'}</div>
+                    </div>
+                  </div>
+                  
+                  <div className="sa-payment-stat-card">
+                    <div className="sa-payment-stat-icon">📦</div>
+                    <div className="sa-payment-stat-info">
+                      <h3>Total Plăți</h3>
+                      <div className="sa-payment-stat-value">{paymentsData.payments?.length || '0'}</div>
+                    </div>
+                  </div>
+                  
+                  <div className="sa-payment-stat-card">
+                    <div className="sa-payment-stat-icon">📚</div>
+                    <div className="sa-payment-stat-info">
+                      <h3>Cursuri Vândute</h3>
+                      <div className="sa-payment-stat-value">{paymentsData.courseStats?.length || '0'}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Top cursuri vândute */}
+                <div className="sa-top-courses">
+                  <div className="sa-top-courses-header">
+                    <h2>Top Cursuri Vândute</h2>
+                    <div className="sa-top-courses-filters">
+                      <button 
+                        className={`sa-filter-btn ${courseFilter === 'all' ? 'active' : ''}`}
+                        onClick={() => setCourseFilter('all')}
+                      >
+                        Toate
+                      </button>
+                      <button 
+                        className={`sa-filter-btn ${courseFilter === 'month' ? 'active' : ''}`}
+                        onClick={() => setCourseFilter('month')}
+                      >
+                        Luna aceasta
+                      </button>
+                      <button 
+                        className={`sa-filter-btn ${courseFilter === 'week' ? 'active' : ''}`}
+                        onClick={() => setCourseFilter('week')}
+                      >
+                        Ultimele 7 zile
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="sa-courses-sales-grid">
+                    {getFilteredCourseStats()?.slice(0, 12).map((course, index) => (
+                      <div key={course.id} className="sa-course-sale-card">
+                        <div className="sa-course-sale-header">
+                          <div className="sa-course-sale-rank">
+                            <span className="sa-rank-number">#{index + 1}</span>
+                            <div className="sa-rank-badge">
+                              {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '⭐'}
+                            </div>
+                          </div>
+                          <div className="sa-course-sale-revenue">
+                            €{course.totalRevenue?.toLocaleString() || '0'}
+                          </div>
+                        </div>
+                        
+                        <div className="sa-course-sale-content">
+                          <h4 className="sa-course-sale-title">{course.title}</h4>
+                          
+                          <div className="sa-course-sale-metrics">
+                            <div className="sa-metric-item">
+                              <div className="sa-metric-icon">👥</div>
+                              <div className="sa-metric-info">
+                                <span className="sa-metric-value">{course.totalSold}</span>
+                                <span className="sa-metric-label">Studenți</span>
+                              </div>
+                            </div>
+                            
+                            <div className="sa-metric-item">
+                              <div className="sa-metric-icon">📦</div>
+                              <div className="sa-metric-info">
+                                <span className="sa-metric-value">{course.orders}</span>
+                                <span className="sa-metric-label">Comenzi</span>
+                              </div>
+                            </div>
+                            
+                            <div className="sa-metric-item">
+                              <div className="sa-metric-icon">💰</div>
+                              <div className="sa-metric-info">
+                                <span className="sa-metric-value">€{Math.round(course.totalRevenue / course.totalSold) || 0}</span>
+                                <span className="sa-metric-label">Preț mediu</span>
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
                     ))}
                   </div>
-                )}
-              </div>
+                  
+                  {paymentsData.courseStats?.length === 0 && (
+                    <div className="sa-no-courses">
+                      <div className="sa-no-courses-icon">📚</div>
+                      <h3>Nu există cursuri vândute</h3>
+                      <p>Încă nu s-au vândut cursuri. Când utilizatorii vor cumpăra cursuri, acestea vor apărea aici.</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Istoric plăți */}
+                <div className="sa-payments-history">
+                  <h2>Istoric Plăți</h2>
+                  <div className="sa-payments-table">
+                    <div className="sa-payments-table-header">
+                      <div>Data</div>
+                      <div>Utilizator</div>
+                      <div>Cursuri</div>
+                      <div>Total</div>
+                      <div>Status</div>
+                    </div>
+                    <div className="sa-payments-table-body">
+                      {paymentsData.payments?.slice(0, 20).map((payment) => (
+                        <div key={payment.id} className="sa-payment-row">
+                          <div className="sa-payment-date">
+                            {new Date(payment.date).toLocaleDateString('ro-RO')}
+                          </div>
+                          <div className="sa-payment-user">
+                            {payment.userEmail}
+                          </div>
+                          <div className="sa-payment-courses">
+                            {payment.items?.length || 0} cursuri
+                          </div>
+                          <div className="sa-payment-total">
+                            €{payment.total?.toLocaleString() || '0'}
+                          </div>
+                          <div className={`sa-payment-status ${payment.status}`}>
+                            {payment.status === 'completed' ? '✅ Finalizată' : 
+                             payment.status === 'pending' ? '⏳ În așteptare' : 
+                             payment.status === 'cancelled' ? '❌ Anulată' : payment.status}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </>
             )}
-          </div>
-        );
-      case 'users':
-        return (
-          <div className="sa-content">
-            <h2>Gestionare Utilizatori</h2>
-            <p>Secțiunea pentru gestionarea utilizatorilor va fi implementată aici.</p>
-          </div>
-        );
-      case 'payments':
-        return (
-          <div className="sa-content">
-            <h2>Gestionare Plăți</h2>
-            <p>Secțiunea pentru gestionarea plăților va fi implementată aici.</p>
           </div>
         );
       case 'reports':
@@ -835,14 +1600,6 @@ export default function SuperAdmin() {
           </nav>
           
           <div className="sa-sidebar-footer">
-            <div className="sa-footer-graphic">
-              <div className="sa-graphic-person">👤</div>
-              <div className="sa-graphic-elements">
-                <span>📢</span>
-                <span>🛍️</span>
-                <span>📊</span>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -853,6 +1610,140 @@ export default function SuperAdmin() {
           </div>
         </div>
       </div>
+
+              {/* Modal pentru detaliile utilizatorului */}
+              {showUserModal && selectedUser && (
+                <div className="sa-modal-overlay" onClick={() => setShowUserModal(false)}>
+                  <div className="sa-modal-content" onClick={(e) => e.stopPropagation()}>
+                    <div className="sa-modal-header">
+                      <h2>Detalii Utilizator</h2>
+                      <button 
+                        className="sa-modal-close"
+                        onClick={() => setShowUserModal(false)}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    
+                    <div className="sa-user-details">
+                      <div className="sa-user-detail-header">
+                        <div className="sa-user-detail-avatar">
+                          {selectedUser.profileImage ? (
+                            <img src={selectedUser.profileImage} alt={selectedUser.name} />
+                          ) : (
+                            selectedUser.name.charAt(0).toUpperCase()
+                          )}
+                        </div>
+                        <div className="sa-user-detail-info">
+                          <h3>{selectedUser.name}</h3>
+                          <p>{selectedUser.email}</p>
+                          {selectedUser.isPremium && (
+                            <span className="sa-user-premium-badge">⭐ Premium</span>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="sa-user-detail-stats">
+                        <div className="sa-user-detail-stat">
+                          <span className="sa-detail-label">Comenzi Totale</span>
+                          <span className="sa-detail-value">{selectedUser.ordersCount || 0}</span>
+                        </div>
+                        <div className="sa-user-detail-stat">
+                          <span className="sa-detail-label">Suma Cheltuită</span>
+                          <span className="sa-detail-value">€{(selectedUser.totalSpent || 0).toLocaleString()}</span>
+                        </div>
+                        <div className="sa-user-detail-stat">
+                          <span className="sa-detail-label">Data Înregistrării</span>
+                          <span className="sa-detail-value">
+                            {formatDate(selectedUser.createdAt)}
+                          </span>
+                        </div>
+                        <div className="sa-user-detail-stat">
+                          <span className="sa-detail-label">Ultima Conectare</span>
+                          <span className="sa-detail-value">
+                            {formatDate(selectedUser.lastLogin)}
+                          </span>
+                        </div>
+                        <div className="sa-user-detail-stat">
+                          <span className="sa-detail-label">Telefon</span>
+                          <span className="sa-detail-value">
+                            {selectedUser.phone || 'N/A'}
+                          </span>
+                        </div>
+                        <div className="sa-user-detail-stat">
+                          <span className="sa-detail-label">Adresă</span>
+                          <span className="sa-detail-value">
+                            {selectedUser.address || 'N/A'}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {/* Statistici generale */}
+                      <div className="sa-user-summary">
+                        <h4>Rezumat Activitate</h4>
+                        <div className="sa-user-summary-stats">
+                          <div className="sa-summary-stat">
+                            <span className="sa-summary-icon">📊</span>
+                            <div className="sa-summary-info">
+                              <span className="sa-summary-label">Cursuri Cumpărate</span>
+                              <span className="sa-summary-value">{selectedUser.ordersCount || 0}</span>
+                            </div>
+                          </div>
+                          <div className="sa-summary-stat">
+                            <span className="sa-summary-icon">💰</span>
+                            <div className="sa-summary-info">
+                              <span className="sa-summary-label">Investiție Totală</span>
+                              <span className="sa-summary-value">€{(selectedUser.totalSpent || 0).toLocaleString()}</span>
+                            </div>
+                          </div>
+                          <div className="sa-summary-stat">
+                            <span className="sa-summary-icon">📅</span>
+                            <div className="sa-summary-info">
+                              <span className="sa-summary-label">Membru din</span>
+                              <span className="sa-summary-value">
+                                {getYearFromDate(selectedUser.createdAt)}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="sa-summary-stat">
+                            <span className="sa-summary-icon">⭐</span>
+                            <div className="sa-summary-info">
+                              <span className="sa-summary-label">Status</span>
+                              <span className="sa-summary-value">
+                                {selectedUser.isPremium ? 'Premium' : 'Standard'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {selectedUser.orders && selectedUser.orders.length > 0 && (
+                        <div className="sa-user-orders">
+                          <h4>Istoric Comenzi</h4>
+                          <div className="sa-user-orders-list">
+                            {selectedUser.orders.map((order, index) => (
+                              <div key={order.id || index} className="sa-user-order-item">
+                                <div className="sa-order-info">
+                                  <span className="sa-order-id">#{order.id}</span>
+                                  <span className="sa-order-date">
+                                    {new Date(order.date).toLocaleDateString('ro-RO')}
+                                  </span>
+                                </div>
+                                <div className="sa-order-amount">€{order.total.toLocaleString()}</div>
+                                <div className={`sa-order-status ${order.status}`}>
+                                  {order.status === 'completed' ? '✅ Finalizată' : 
+                                   order.status === 'pending' ? '⏳ În așteptare' : 
+                                   '❌ Anulată'}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
 
       {/* Modal pentru adăugarea/editarea cursurilor */}
       {showAddCourseModal && (

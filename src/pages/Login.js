@@ -85,8 +85,7 @@ export default function Login() {
         <div className="container">
           <div className="auth-form-container">
             <div className="loading-auth">
-              <div className="loading-spinner">🔄</div>
-              <p>Se verifică autentificarea...</p>
+              <div className="loading-spinner"></div>
             </div>
           </div>
         </div>

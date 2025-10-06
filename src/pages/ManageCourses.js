@@ -158,8 +158,7 @@ export default function ManageCourses() {
           
           {loading ? (
             <div className="loading">
-              <div className="loading-spinner">🔄</div>
-              <p>Se încarcă cursurile...</p>
+              <div className="loading-spinner"></div>
             </div>
           ) : courses.length === 0 ? (
             <div className="no-courses">

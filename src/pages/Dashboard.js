@@ -365,8 +365,7 @@ export default function Dashboard() {
       <div className="dashboard-page">
         <div className="container">
           <div className="dashboard-loading">
-            <div className="loading-spinner">🔄</div>
-            <p>Se încarcă dashboard-ul...</p>
+            <div className="loading-spinner"></div>
           </div>
         </div>
       </div>
