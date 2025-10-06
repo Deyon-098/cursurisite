@@ -24,17 +24,28 @@ export default function SuperAdmin() {
     title: '',
     shortDescription: '',
     description: '',
+    image: 'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?q=80&w=1200&auto=format&fit=crop',
     category: 'web-development',
     subcategory: 'react',
     price: 0,
     originalPrice: 0,
-    currency: 'RON',
+    currency: 'EUR',
     isFree: false,
     tags: [],
-    level: 'beginner',
-    language: 'română',
+    level: 'Începător',
+    language: 'Română',
     duration: 0,
-    lessons: 0,
+    lessonsCount: 0,
+    instructor: 'Expert',
+    instructorBio: '',
+    instructorImage: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150&auto=format&fit=crop',
+    rating: 0,
+    studentsCount: 0,
+    lastUpdated: new Date().toISOString().split('T')[0],
+    requirements: [],
+    objectives: [],
+    curriculum: [],
+    whatYouGet: [],
     isPublished: false,
     isFeatured: false
   });
@@ -94,17 +105,28 @@ export default function SuperAdmin() {
         title: '',
         shortDescription: '',
         description: '',
+        image: 'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?q=80&w=1200&auto=format&fit=crop',
         category: 'web-development',
         subcategory: 'react',
         price: 0,
         originalPrice: 0,
-        currency: 'RON',
+        currency: 'EUR',
         isFree: false,
         tags: [],
-        level: 'beginner',
-        language: 'română',
+        level: 'Începător',
+        language: 'Română',
         duration: 0,
-        lessons: 0,
+        lessonsCount: 0,
+        instructor: 'Expert',
+        instructorBio: '',
+        instructorImage: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150&auto=format&fit=crop',
+        rating: 0,
+        studentsCount: 0,
+        lastUpdated: new Date().toISOString().split('T')[0],
+        requirements: [],
+        objectives: [],
+        curriculum: [],
+        whatYouGet: [],
         isPublished: false,
         isFeatured: false
       });
@@ -120,19 +142,30 @@ export default function SuperAdmin() {
       title: course.title || '',
       shortDescription: course.shortDescription || '',
       description: course.description || '',
+      image: course.image || 'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?q=80&w=1200&auto=format&fit=crop',
       category: course.category || 'web-development',
       subcategory: course.subcategory || 'react',
       price: course.price || 0,
       originalPrice: course.originalPrice || 0,
-      currency: course.currency || 'RON',
+      currency: course.currency || 'EUR',
       isFree: course.isFree || false,
       tags: course.tags || [],
-      level: course.settings?.level || 'beginner',
-      language: course.settings?.language || 'română',
-      duration: course.settings?.duration || 0,
-      lessons: course.settings?.lessons || 0,
-      isPublished: course.settings?.isPublished || false,
-      isFeatured: course.settings?.isFeatured || false
+      level: course.level || 'Începător',
+      language: course.language || 'Română',
+      duration: course.duration || 0,
+      lessonsCount: course.lessonsCount || 0,
+      instructor: course.instructor || 'Expert',
+      instructorBio: course.instructorBio || '',
+      instructorImage: course.instructorImage || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150&auto=format&fit=crop',
+      rating: course.rating || 0,
+      studentsCount: course.studentsCount || 0,
+      lastUpdated: course.lastUpdated || new Date().toISOString().split('T')[0],
+      requirements: course.requirements || [],
+      objectives: course.objectives || [],
+      curriculum: course.curriculum || [],
+      whatYouGet: course.whatYouGet || [],
+      isPublished: course.isPublished || false,
+      isFeatured: course.isFeatured || false
     });
     setShowAddCourseModal(true);
   };
@@ -410,15 +443,38 @@ export default function SuperAdmin() {
           <div className="admin-content">
             <div className="admin-courses-section">
               <div className="admin-section-header">
-                <h1>Gestionare Cursuri</h1>
-                <p>Gestionează toate cursurile din platformă</p>
-                <button 
-                  className="admin-add-course-btn"
-                  onClick={() => setShowAddCourseModal(true)}
-                >
-                  <span className="admin-btn-icon">➕</span>
-                  Adaugă Curs Nou
-                </button>
+                <div className="admin-header-layout">
+                  <div className="admin-title-section">
+                    <h1>Gestionare Cursuri</h1>
+                    <button 
+                      className="btn primary"
+                      onClick={() => setShowAddCourseModal(true)}
+                    >
+                      ➕ Adaugă Curs Nou
+                    </button>
+                  </div>
+                  
+                  <div className="admin-stats-section">
+                    <div className="admin-stats-bar">
+                      <div className="admin-stat-item">
+                        <span className="stat-number">{courses.length}</span>
+                        <span className="stat-label">Total Cursuri</span>
+                      </div>
+                      <div className="admin-stat-item">
+                        <span className="stat-number">{courses.filter(c => c.isPublished).length}</span>
+                        <span className="stat-label">Publicate</span>
+                      </div>
+                      <div className="admin-stat-item">
+                        <span className="stat-number">{courses.filter(c => !c.isPublished).length}</span>
+                        <span className="stat-label">Draft</span>
+                      </div>
+                      <div className="admin-stat-item">
+                        <span className="stat-number">{courses.filter(c => c.isFeatured).length}</span>
+                        <span className="stat-label">Featured</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
               
               {coursesLoading ? (
@@ -441,69 +497,52 @@ export default function SuperAdmin() {
                       </button>
                     </div>
                   ) : (
-                    <div className="admin-courses-grid">
+                    <div className="courses-grid">
                       {courses.map((course) => (
-                        <div key={course.id} className="admin-course-card">
-                          <div className="admin-course-header">
-                            <div className="admin-course-title">{course.title}</div>
-                            <div className="admin-course-status">
-                              {course.settings?.isPublished ? (
-                                <span className="admin-status-published">Publicat</span>
+                        <article key={course.id} className="course-card">
+                          <div className="course-card-media">
+                            <img src={course.image || 'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?q=80&w=1200&auto=format&fit=crop'} alt={course.title} />
+                            <div className="course-level-badge">{course.level || 'Începător'}</div>
+                            {/* Admin Status Overlay */}
+                            <div className="admin-status-overlay">
+                              {course.isPublished ? (
+                                <span className="admin-status-published">✅ Publicat</span>
                               ) : (
-                                <span className="admin-status-draft">Draft</span>
+                                <span className="admin-status-draft">📝 Draft</span>
                               )}
-                              {course.settings?.isFeatured && (
-                                <span className="admin-status-featured">Featured</span>
+                              {course.isFeatured && (
+                                <span className="admin-status-featured">⭐ Featured</span>
                               )}
                             </div>
                           </div>
                           
-                          <div className="admin-course-info">
-                            <div className="admin-course-meta">
-                              <span className="admin-course-category">{course.category}</span>
-                              <span className="admin-course-level">{course.settings?.level}</span>
-                              <span className="admin-course-language">{course.settings?.language}</span>
-                            </div>
+                          <div className="course-card-body">
+                            <h3 className="course-card-title">{course.title}</h3>
+                            <p className="course-card-instructor">👨‍🏫 {course.instructor || 'Expert'}</p>
+                            <p className="course-card-description">{course.shortDescription}</p>
                             
-                            <div className="admin-course-description">
-                              {course.shortDescription}
-                            </div>
-                            
-                            <div className="admin-course-stats">
-                              <div className="admin-course-stat">
-                                <span className="admin-stat-label">Preț:</span>
-                                <span className="admin-course-price">
-                                  {course.isFree ? 'Gratuit' : `${course.price} ${course.currency}`}
-                                </span>
+                            <div className="course-card-footer">
+                              <div className="course-card-price">
+                                <span className="price-currency">€</span>
+                                <span className="price-amount">{course.isFree ? '0' : (course.price || 0).toFixed(0)}</span>
                               </div>
-                              <div className="admin-course-stat">
-                                <span className="admin-stat-label">Studenți:</span>
-                                <span className="admin-course-students">{course.stats?.students || 0}</span>
-                              </div>
-                              <div className="admin-course-stat">
-                                <span className="admin-stat-label">Rating:</span>
-                                <span className="admin-course-rating">⭐ {course.stats?.rating || 0}</span>
+                              <div className="course-card-actions">
+                                <button 
+                                  className="btn ghost small"
+                                  onClick={() => handleEditCourse(course)}
+                                >
+                                  ✏️ Edit
+                                </button>
+                                <button 
+                                  className="btn primary small"
+                                  onClick={() => handleDeleteCourse(course.id)}
+                                >
+                                  🗑️ Delete
+                                </button>
                               </div>
                             </div>
                           </div>
-                          
-                          <div className="admin-course-actions">
-                            <button 
-                              className="admin-edit-btn"
-                              onClick={() => handleEditCourse(course)}
-                            >
-                              <span className="admin-btn-icon">✏️</span>
-                              Editează
-                            </button>
-                            <button 
-                              className="admin-delete-btn"
-                              onClick={() => handleDeleteCourse(course.id)}
-                            >
-                              <span className="admin-btn-icon">🗑️</span>
-                              Șterge
-                            </button>
-                          </div>
-                        </div>
+                        </article>
                       ))}
                     </div>
                   )}
@@ -647,14 +686,121 @@ export default function SuperAdmin() {
               </div>
               
               <div className="admin-form-group">
-                <label htmlFor="description">Descriere completă</label>
+                <label htmlFor="description">Despre acest curs *</label>
                 <textarea
                   id="description"
                   name="description"
                   value={newCourse.description}
                   onChange={handleNewCourseChange}
-                  placeholder="Descriere detaliată a cursului"
+                  placeholder="Descriere detaliată a cursului - ce va învăța utilizatorul"
                   rows="5"
+                  required
+                />
+              </div>
+              
+              <div className="admin-form-group">
+                <label htmlFor="objectives">Ce vei învăța * (una per linie)</label>
+                <textarea
+                  id="objectives"
+                  name="objectives"
+                  value={newCourse.objectives ? newCourse.objectives.join('\n') : ''}
+                  onChange={(e) => {
+                    const objectivesArray = e.target.value.split('\n').filter(obj => obj.trim() !== '');
+                    setNewCourse({...newCourse, objectives: objectivesArray});
+                  }}
+                  placeholder="Exemplu:&#10;Înțelegerea conceptelor fundamentale React&#10;Construirea primelor componente React&#10;Gestionarea stării cu useState și useEffect"
+                  rows="5"
+                  required
+                />
+              </div>
+              
+              <div className="admin-form-group">
+                <label htmlFor="curriculum">Programa cursului * (una per linie)</label>
+                <textarea
+                  id="curriculum"
+                  name="curriculum"
+                  value={newCourse.curriculum ? newCourse.curriculum.map(item => 
+                    typeof item === 'string' ? item : item.lesson || item.title || item
+                  ).join('\n') : ''}
+                  onChange={(e) => {
+                    const curriculumArray = e.target.value.split('\n').filter(item => item.trim() !== '');
+                    setNewCourse({...newCourse, curriculum: curriculumArray});
+                  }}
+                  placeholder="Exemplu:&#10;Introducere în React&#10;Componente și Props&#10;State și Hooks&#10;Proiect Final"
+                  rows="6"
+                  required
+                />
+              </div>
+              
+              <div className="admin-form-group">
+                <label htmlFor="whatYouGet">Ce vei primi * (una per linie)</label>
+                <textarea
+                  id="whatYouGet"
+                  name="whatYouGet"
+                  value={newCourse.whatYouGet ? newCourse.whatYouGet.join('\n') : ''}
+                  onChange={(e) => {
+                    const whatYouGetArray = e.target.value.split('\n').filter(item => item.trim() !== '');
+                    setNewCourse({...newCourse, whatYouGet: whatYouGetArray});
+                  }}
+                  placeholder="Exemplu:&#10;32 de lecții video HD&#10;Cod sursă pentru toate proiectele&#10;Acces la comunitatea Discord&#10;Certificat de finalizare"
+                  rows="4"
+                  required
+                />
+              </div>
+              
+              <div className="admin-form-row">
+                <div className="admin-form-group">
+                  <label htmlFor="image">URL Imagine *</label>
+                  <input
+                    type="url"
+                    id="image"
+                    name="image"
+                    value={newCourse.image}
+                    onChange={handleNewCourseChange}
+                    required
+                    placeholder="https://images.unsplash.com/..."
+                  />
+                </div>
+                
+                <div className="admin-form-group">
+                  <label htmlFor="instructor">Instructor *</label>
+                  <input
+                    type="text"
+                    id="instructor"
+                    name="instructor"
+                    value={newCourse.instructor}
+                    onChange={handleNewCourseChange}
+                    required
+                    placeholder="Numele instructorului"
+                  />
+                </div>
+              </div>
+              
+              <div className="admin-form-group">
+                <label htmlFor="instructorBio">Biografia Instructorului</label>
+                <textarea
+                  id="instructorBio"
+                  name="instructorBio"
+                  value={newCourse.instructorBio}
+                  onChange={handleNewCourseChange}
+                  placeholder="Descrierea instructorului"
+                  rows="2"
+                />
+              </div>
+              
+              <div className="admin-form-group">
+                <label htmlFor="requirements">Cerințe * (una per linie)</label>
+                <textarea
+                  id="requirements"
+                  name="requirements"
+                  value={newCourse.requirements ? newCourse.requirements.join('\n') : ''}
+                  onChange={(e) => {
+                    const requirementsArray = e.target.value.split('\n').filter(req => req.trim() !== '');
+                    setNewCourse({...newCourse, requirements: requirementsArray});
+                  }}
+                  placeholder="Exemplu:&#10;Cunoștințe de bază în JavaScript&#10;HTML și CSS de bază&#10;Node.js instalat pe computer"
+                  rows="4"
+                  required
                 />
               </div>
               
@@ -674,6 +820,9 @@ export default function SuperAdmin() {
                     <option value="design">Design</option>
                     <option value="business">Business</option>
                     <option value="marketing">Marketing</option>
+                    <option value="cybersecurity">Cybersecurity</option>
+                    <option value="blockchain">Blockchain</option>
+                    <option value="game-development">Game Development</option>
                   </select>
                 </div>
                 
@@ -686,16 +835,47 @@ export default function SuperAdmin() {
                     onChange={handleNewCourseChange}
                     required
                   >
-                    <option value="beginner">Începător</option>
-                    <option value="intermediate">Intermediar</option>
-                    <option value="advanced">Avansat</option>
+                    <option value="Începător">Începător</option>
+                    <option value="Intermediar">Intermediar</option>
+                    <option value="Avansat">Avansat</option>
                   </select>
                 </div>
               </div>
               
               <div className="admin-form-row">
                 <div className="admin-form-group">
-                  <label htmlFor="price">Preț (RON) *</label>
+                  <label htmlFor="language">Limbă *</label>
+                  <select
+                    id="language"
+                    name="language"
+                    value={newCourse.language}
+                    onChange={handleNewCourseChange}
+                    required
+                  >
+                    <option value="Română">Română</option>
+                    <option value="English">English</option>
+                    <option value="Français">Français</option>
+                    <option value="Deutsch">Deutsch</option>
+                    <option value="Español">Español</option>
+                  </select>
+                </div>
+                
+                <div className="admin-form-group">
+                  <label htmlFor="subcategory">Subcategorie</label>
+                  <input
+                    type="text"
+                    id="subcategory"
+                    name="subcategory"
+                    value={newCourse.subcategory}
+                    onChange={handleNewCourseChange}
+                    placeholder="Ex: react, python, cybersecurity"
+                  />
+                </div>
+              </div>
+              
+              <div className="admin-form-row">
+                <div className="admin-form-group">
+                  <label htmlFor="price">Preț (EUR) *</label>
                   <input
                     type="number"
                     id="price"
@@ -704,12 +884,13 @@ export default function SuperAdmin() {
                     onChange={handleNewCourseChange}
                     required
                     min="0"
-                    placeholder="0"
+                    step="0.01"
+                    placeholder="0.00"
                   />
                 </div>
                 
                 <div className="admin-form-group">
-                  <label htmlFor="originalPrice">Preț original (RON)</label>
+                  <label htmlFor="originalPrice">Preț original (EUR)</label>
                   <input
                     type="number"
                     id="originalPrice"
@@ -717,7 +898,8 @@ export default function SuperAdmin() {
                     value={newCourse.originalPrice}
                     onChange={handleNewCourseChange}
                     min="0"
-                    placeholder="0"
+                    step="0.01"
+                    placeholder="0.00"
                   />
                 </div>
               </div>
@@ -737,12 +919,42 @@ export default function SuperAdmin() {
                 </div>
                 
                 <div className="admin-form-group">
-                  <label htmlFor="lessons">Numărul de lecții</label>
+                  <label htmlFor="lessonsCount">Numărul de lecții</label>
                   <input
                     type="number"
-                    id="lessons"
-                    name="lessons"
-                    value={newCourse.lessons}
+                    id="lessonsCount"
+                    name="lessonsCount"
+                    value={newCourse.lessonsCount}
+                    onChange={handleNewCourseChange}
+                    min="0"
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+              
+              <div className="admin-form-row">
+                <div className="admin-form-group">
+                  <label htmlFor="rating">Rating inițial</label>
+                  <input
+                    type="number"
+                    id="rating"
+                    name="rating"
+                    value={newCourse.rating}
+                    onChange={handleNewCourseChange}
+                    min="0"
+                    max="5"
+                    step="0.1"
+                    placeholder="0.0"
+                  />
+                </div>
+                
+                <div className="admin-form-group">
+                  <label htmlFor="studentsCount">Numărul de studenți</label>
+                  <input
+                    type="number"
+                    id="studentsCount"
+                    name="studentsCount"
+                    value={newCourse.studentsCount}
                     onChange={handleNewCourseChange}
                     min="0"
                     placeholder="0"
