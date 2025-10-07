@@ -16,6 +16,8 @@ import DemoCards from './pages/DemoCards';
 import ManageCourses from './pages/ManageCourses';
 import CourseLearning from './pages/CourseLearning';
 import SuperAdmin from './pages/SuperAdmin';
+import CourseBuilder from './pages/CourseBuilder';
+import CourseEditor from './pages/CourseEditor';
 
 // Component pentru scroll la top la schimbarea rutei
 function ScrollToTop() {
@@ -46,6 +48,8 @@ function AppLayout() {
   const location = useLocation();
   const isDashboard = location.pathname === '/dashboard';
   const isSuperAdmin = location.pathname === '/admindanu';
+  const isCourseBuilder = location.pathname === '/course-builder';
+  const isCourseEditor = location.pathname.startsWith('/edit-course/');
 
   if (isDashboard) {
     // Layout full-screen pentru Dashboard (fără Header/Footer)
@@ -61,6 +65,24 @@ function AppLayout() {
     return (
       <Routes>
         <Route path="/admindanu" element={<SuperAdmin />} />
+      </Routes>
+    );
+  }
+
+  if (isCourseBuilder) {
+    // Layout full-screen pentru Course Builder (fără Header/Footer)
+    return (
+      <Routes>
+        <Route path="/course-builder" element={<CourseBuilder />} />
+      </Routes>
+    );
+  }
+
+  if (isCourseEditor) {
+    // Layout full-screen pentru Course Editor (fără Header/Footer)
+    return (
+      <Routes>
+        <Route path="/edit-course/:id" element={<CourseEditor />} />
       </Routes>
     );
   }

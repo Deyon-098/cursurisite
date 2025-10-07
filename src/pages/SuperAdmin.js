@@ -597,37 +597,8 @@ export default function SuperAdmin() {
   };
 
   const handleEditCourse = (course) => {
-    setEditingCourse(course);
-    setNewCourse({
-      title: course.title || '',
-      shortDescription: course.shortDescription || '',
-      description: course.description || '',
-      image: course.image || 'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?q=80&w=1200&auto=format&fit=crop',
-      category: course.category || 'web-development',
-      subcategory: course.subcategory || 'react',
-      price: course.price || 0,
-      originalPrice: course.originalPrice || 0,
-      currency: course.currency || 'EUR',
-      isFree: course.isFree || false,
-      tags: course.tags || [],
-      level: course.level || 'Începător',
-      language: course.language || 'Română',
-      duration: course.duration || 0,
-      lessonsCount: course.lessonsCount || 0,
-      instructor: course.instructor || 'Expert',
-      instructorBio: course.instructorBio || '',
-      instructorImage: course.instructorImage || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150&auto=format&fit=crop',
-      rating: course.rating || 0,
-      studentsCount: course.studentsCount || 0,
-      lastUpdated: course.lastUpdated || new Date().toISOString().split('T')[0],
-      requirements: course.requirements || [],
-      objectives: course.objectives || [],
-      curriculum: course.curriculum || [],
-      whatYouGet: course.whatYouGet || [],
-      isPublished: course.isPublished || false,
-      isFeatured: course.isFeatured || false
-    });
-    setShowAddCourseModal(true);
+    // Navighează la pagina de editare curs
+    navigate(`/edit-course/${course.id}`);
   };
 
   const handleDeleteCourse = async (courseId) => {
@@ -1157,10 +1128,10 @@ export default function SuperAdmin() {
               <div className="sa-header-left">
                     <h1>Gestionare Cursuri</h1>
                     <button 
-                  className="sa-add-course-btn"
-                      onClick={() => setShowAddCourseModal(true)}
+                      className="sa-add-course-btn"
+                      onClick={() => navigate('/course-builder')}
                     >
-                      ➕ Adaugă Curs Nou
+                      🎨 Constructor Cursuri
                     </button>
                   </div>
                   
