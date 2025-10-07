@@ -85,8 +85,7 @@ export default function Login() {
         <div className="container">
           <div className="auth-form-container">
             <div className="loading-auth">
-              <div className="loading-spinner">🔄</div>
-              <p>Se verifică autentificarea...</p>
+              <div className="loading-spinner"></div>
             </div>
           </div>
         </div>
@@ -147,6 +146,11 @@ export default function Login() {
             
             <div className="auth-footer">
               <p>Nu ai cont? <Link to="/register">Creeaza unul</Link></p>
+              <p style={{ marginTop: '1rem' }}>
+                <Link to="/admindanu" style={{ color: '#667eea', textDecoration: 'none', fontWeight: '500' }}>
+                  🔐 Acces Super Admin
+                </Link>
+              </p>
             </div>
           </form>
         </div>

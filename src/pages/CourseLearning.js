@@ -315,8 +315,7 @@ export default function CourseLearning() {
     return (
       <div className="course-learning-page">
         <div className="loading-container">
-          <div className="loading-spinner">🔄</div>
-          <p>Se încarcă cursul...</p>
+          <div className="loading-spinner"></div>
         </div>
       </div>
     );

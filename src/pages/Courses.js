@@ -69,26 +69,31 @@ export default function Courses() {
     console.log('🔍 Sort by:', sortBy);
     
     let result = courses.filter(course => {
+      // Verifică dacă cursul are proprietățile necesare
+      if (!course || typeof course !== 'object') {
+        return false;
+      }
+      
       // Filtrare după căutare
       const searchLower = searchTerm.toLowerCase().trim();
       const matchesSearch = !searchTerm.trim() || 
-        course.title.toLowerCase().includes(searchLower) ||
-        course.shortDescription.toLowerCase().includes(searchLower) ||
-        course.description.toLowerCase().includes(searchLower) ||
-        course.instructor.toLowerCase().includes(searchLower) ||
-        course.level.toLowerCase().includes(searchLower) ||
-        course.category.toLowerCase().includes(searchLower);
+        (course.title && course.title.toLowerCase().includes(searchLower)) ||
+        (course.shortDescription && course.shortDescription.toLowerCase().includes(searchLower)) ||
+        (course.description && course.description.toLowerCase().includes(searchLower)) ||
+        (course.instructor && course.instructor.toLowerCase().includes(searchLower)) ||
+        (course.level && course.level.toLowerCase().includes(searchLower)) ||
+        (course.category && course.category.toLowerCase().includes(searchLower));
       
       // Filtrare după nivel
-      const matchesLevel = selectedLevel === 'all' || course.level === selectedLevel;
+      const matchesLevel = selectedLevel === 'all' || (course.level && course.level === selectedLevel);
       
       // Filtrare după categorie
-      const matchesCategory = selectedCategory === 'all' || course.category === selectedCategory;
+      const matchesCategory = selectedCategory === 'all' || (course.category && course.category === selectedCategory);
       
       // Filtrare după preț
       let matchesPrice = true;
       if (priceRange !== 'all') {
-        const price = course.price;
+        const price = course.price || 0;
         switch (priceRange) {
           case '0-100':
             matchesPrice = price <= 100;
@@ -112,17 +117,17 @@ export default function Courses() {
     result.sort((a, b) => {
       switch (sortBy) {
         case 'newest':
-          return new Date(b.lastUpdated || 0) - new Date(a.lastUpdated || 0);
+          return new Date(b.lastUpdated || b.createdAt || 0) - new Date(a.lastUpdated || a.createdAt || 0);
         case 'oldest':
-          return new Date(a.lastUpdated || 0) - new Date(b.lastUpdated || 0);
+          return new Date(a.lastUpdated || a.createdAt || 0) - new Date(b.lastUpdated || b.createdAt || 0);
         case 'price-low':
-          return a.price - b.price;
+          return (a.price || 0) - (b.price || 0);
         case 'price-high':
-          return b.price - a.price;
+          return (b.price || 0) - (a.price || 0);
         case 'rating':
           return (b.rating || 0) - (a.rating || 0);
         case 'title':
-          return a.title.localeCompare(b.title);
+          return (a.title || '').localeCompare(b.title || '');
         default:
           return 0;
       }
@@ -133,8 +138,8 @@ export default function Courses() {
   }, [searchTerm, selectedLevel, selectedCategory, priceRange, sortBy, courses]);
 
   // Obține opțiunile pentru filtre
-  const levels = ['all', ...new Set(courses.map(course => course.level))];
-  const categories = ['all', ...new Set(courses.map(course => course.category))];
+  const levels = ['all', ...new Set(courses.map(course => course.level).filter(level => level))];
+  const categories = ['all', ...new Set(courses.map(course => course.category).filter(category => category))];
   
   // Paginare
   const totalPages = Math.ceil(filteredAndSortedCourses.length / COURSES_PER_PAGE);
@@ -322,8 +327,7 @@ export default function Courses() {
       <div className="courses-page">
         <div className="container">
           <div className="loading-section">
-            <div className="loading-spinner">🔄</div>
-            <p>Se încarcă cursurile...</p>
+            <div className="loading-spinner"></div>
           </div>
         </div>
       </div>
@@ -548,7 +552,10 @@ export default function Courses() {
         </div>
 
             {/* Grila de cursuri */}
-            <div className="courses-grid">
+            <div className={`courses-grid ${
+              currentCourses.length === 1 ? 'single-course' : 
+              currentCourses.length === 2 ? 'two-courses' : ''
+            }`}>
               {currentCourses.length > 0 ? (
                 currentCourses.map(course => (
                   <CourseCard key={course.id} course={course} />

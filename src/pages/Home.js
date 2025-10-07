@@ -10,6 +10,44 @@ export default function Home() {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Funcție pentru calcularea orelor reale de conținut
+  const getRealContentHours = () => {
+    if (!courses || courses.length === 0) {
+      return 0;
+    }
+    
+    let totalHours = 0;
+    courses.forEach(course => {
+      // Calculează orele din durata cursului sau din lecții
+      if (course.duration) {
+        // Dacă cursul are durata specificată
+        const duration = course.duration;
+        if (typeof duration === 'number') {
+          totalHours += duration;
+        } else if (typeof duration === 'string') {
+          // Parsează durata din string (ex: "2h 30m" sau "2.5h")
+          const hoursMatch = duration.match(/(\d+(?:\.\d+)?)\s*h/i);
+          const minutesMatch = duration.match(/(\d+)\s*m/i);
+          
+          if (hoursMatch) {
+            totalHours += parseFloat(hoursMatch[1]);
+          }
+          if (minutesMatch) {
+            totalHours += parseFloat(minutesMatch[1]) / 60;
+          }
+        }
+      } else if (course.lessons && course.lessons.length > 0) {
+        // Dacă nu are durată, calculează din lecții (presupunând 30 min per lecție)
+        totalHours += course.lessons.length * 0.5;
+      } else {
+        // Fallback: presupune 1 oră per curs
+        totalHours += 1;
+      }
+    });
+    
+    return Math.round(totalHours * 10) / 10; // Rotunjește la o zecimală
+  };
+
   // Referințe GSAP pentru animații
   const heroRef = useGSAP((element) => {
     if (window.gsap) {
@@ -231,8 +269,7 @@ export default function Home() {
       <div className="home-page">
         <div className="container">
           <div className="loading-section">
-            <div className="loading-spinner">🔄</div>
-            <p>Se încarcă cursurile...</p>
+            <div className="loading-spinner"></div>
           </div>
         </div>
       </div>
@@ -354,7 +391,7 @@ export default function Home() {
             </div>
             <div className="stat-card">
               <div className="stat-icon">⏱️</div>
-              <div className="stat-number">{courses.reduce((total, course) => total + (course.duration || 0), 0)}+</div>
+              <div className="stat-number">{getRealContentHours()}+</div>
               <div className="stat-label">Ore de Conținut</div>
             </div>
             <div className="stat-card">

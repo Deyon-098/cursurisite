@@ -92,9 +92,7 @@ export default function CourseDetails() {
       <div className="course-details-page">
         <div className="container">
           <div className="loading-state">
-            <div className="loading-spinner">🔄</div>
-            <h2>Se încarcă cursul...</h2>
-            <p>Te rugăm să aștepți</p>
+            <div className="loading-spinner"></div>
           </div>
         </div>
       </div>
