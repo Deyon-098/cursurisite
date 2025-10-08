@@ -186,159 +186,49 @@ const CourseEditor = () => {
   }
 
   return (
-    <div className="course-editor">
-      {/* Header */}
-      <div className="course-editor-header">
-        <div className="course-editor-nav">
+    <div className="course-edit-modern">
+      {/* Header cu navigare */}
+      <div className="course-edit-header">
+        <div className="container">
           <button 
-            className="back-btn"
+            className="back-button"
             onClick={() => navigate('/admindanu')}
           >
-            ← Înapoi la Super Admin
+            <span className="back-icon">←</span>
+            <span>Înapoi la Super Admin</span>
           </button>
           <h1>Editare Curs</h1>
-          <div className="course-editor-actions">
-            <span className="save-status">{saveStatus}</span>
-            <button 
-              className="save-btn"
-              onClick={handleSave}
-              disabled={saving}
-            >
-              {saving ? 'Se salvează...' : '💾 Salvează modificările'}
-            </button>
-          </div>
         </div>
       </div>
 
-      {/* Navigation Tabs */}
-      <div className="course-editor-nav-tabs">
-        <button 
-          className={`nav-tab ${activeTab === 'overview' ? 'active' : ''}`}
-          onClick={() => setActiveTab('overview')}
-        >
-          📋 Prezentare Generală
-        </button>
-        <button 
-          className={`nav-tab ${activeTab === 'content' ? 'active' : ''}`}
-          onClick={() => setActiveTab('content')}
-        >
-          📚 Conținut Curs
-        </button>
-        <button 
-          className={`nav-tab ${activeTab === 'instructor' ? 'active' : ''}`}
-          onClick={() => setActiveTab('instructor')}
-        >
-          👨‍🏫 Instructor
-        </button>
-        <button 
-          className={`nav-tab ${activeTab === 'pricing' ? 'active' : ''}`}
-          onClick={() => setActiveTab('pricing')}
-        >
-          💰 Prețuri
-        </button>
-        <button 
-          className={`nav-tab ${activeTab === 'settings' ? 'active' : ''}`}
-          onClick={() => setActiveTab('settings')}
-        >
-          ⚙️ Setări
-        </button>
-      </div>
+      <div className="container">
+        <div className="course-edit-layout">
+          {/* Coloana stângă - Conținutul principal */}
+          <div className="course-edit-main">
+            
+            {/* 1. Numele cursului */}
+            <div className="course-title-section">
+              <input
+                type="text"
+                className="course-title-input"
+                value={course.title || ''}
+                onChange={(e) => updateCourseField('title', e.target.value)}
+                placeholder="Numele cursului"
+              />
+            </div>
 
-      {/* Main Content */}
-      <div className="course-editor-content">
-        {/* Overview Tab */}
-        {activeTab === 'overview' && (
-          <div className="course-editor-section">
-            {/* Hero Section - ca un curs real */}
-            <div className="course-hero">
-              <div className="course-hero-content">
-                <div className="course-hero-left">
-                  <div className="course-category">
-                    <select
-                      className="category-select"
-                      value={course.category || ''}
-                      onChange={(e) => updateCourseField('category', e.target.value)}
-                    >
-                      <option value="">Selectează categoria</option>
-                      <option value="programming">Programare</option>
-                      <option value="design">Design</option>
-                      <option value="business">Business</option>
-                      <option value="marketing">Marketing</option>
-                      <option value="languages">Limbi străine</option>
-                    </select>
-                  </div>
-                  
-                  <div className="course-title">
-                    <input
-                      type="text"
-                      className="title-input"
-                      value={course.title || ''}
-                      onChange={(e) => updateCourseField('title', e.target.value)}
-                      placeholder="Titlul cursului"
-                    />
-                  </div>
-                  
-                  <div className="course-short-description">
-                    <textarea
-                      className="short-description-input"
-                      value={course.shortDescription || ''}
-                      onChange={(e) => updateCourseField('shortDescription', e.target.value)}
-                      placeholder="Descrierea scurtă a cursului"
-                      rows="3"
-                    />
-                  </div>
-                  
-                  <div className="course-meta">
-                    <div className="meta-item">
-                      <label>Instructor</label>
-                      <input
-                        type="text"
-                        className="instructor-input"
-                        value={course.instructor?.name || ''}
-                        onChange={(e) => updateInstructorField('name', e.target.value)}
-                        placeholder="Numele instructorului"
-                      />
-                    </div>
-                    <div className="meta-item">
-                      <label>Nivel</label>
-                      <select
-                        className="level-select"
-                        value={course.level || ''}
-                        onChange={(e) => updateCourseField('level', e.target.value)}
-                      >
-                        <option value="">Selectează nivelul</option>
-                        <option value="beginner">Începător</option>
-                        <option value="intermediate">Intermediar</option>
-                        <option value="advanced">Avansat</option>
-                      </select>
-                    </div>
-                    <div className="meta-item">
-                      <label>Durată</label>
-                      <input
-                        type="text"
-                        className="duration-input"
-                        value={course.duration || ''}
-                        onChange={(e) => updateCourseField('duration', e.target.value)}
-                        placeholder="ex: 10 ore"
-                      />
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="course-hero-right">
-                  <div className="course-image-container">
+            {/* 2. Imaginea pentru preview și video */}
+            <div className="course-media-section">
+              <div className="media-upload-area">
+                <div className="image-upload-section">
+                  <h3>Imaginea pentru preview</h3>
+                  <div className="image-upload-container">
                     {imagePreview ? (
-                      <img src={imagePreview} alt="Course" className="course-image" />
+                      <img src={imagePreview} alt="Course Preview" className="preview-image" />
                     ) : (
                       <div className="image-upload-placeholder">
                         <span>📷</span>
-                        <p>Încarcă imaginea cursului</p>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleImageUpload}
-                          className="image-upload-input"
-                        />
+                        <p>Încarcă imaginea pentru preview</p>
                       </div>
                     )}
                     <input
@@ -349,348 +239,238 @@ const CourseEditor = () => {
                     />
                   </div>
                 </div>
+
+                <div className="video-upload-section">
+                  <h3>Video curs</h3>
+                  <div className="video-upload-container">
+                    {videoPreview ? (
+                      <video controls className="preview-video">
+                        <source src={videoPreview} type="video/mp4" />
+                        Browser-ul tău nu suportă videoclipul.
+                      </video>
+                    ) : (
+                      <div className="video-upload-placeholder">
+                        <span>🎥</span>
+                        <p>Încarcă videoclipul cursului</p>
+                      </div>
+                    )}
+                    <input
+                      type="file"
+                      accept="video/*"
+                      onChange={handleVideoUpload}
+                      className="video-upload-input"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Description Section */}
-            <div className="course-description-section">
-              <h2>Descrierea cursului</h2>
+            {/* 3. Despre acest curs */}
+            <div className="course-about-section">
+              <h3 className="section-title">Despre acest curs</h3>
               <textarea
-                className="description-textarea"
+                className="course-description-input"
                 value={course.description || ''}
                 onChange={(e) => updateCourseField('description', e.target.value)}
-                placeholder="Descrierea detaliată a cursului..."
-                rows="8"
+                placeholder="Un curs complet de cybersecurity care te va învăța cum să identifici vulnerabilități, să implementezi măsuri de securitate și să răspunzi la incidente de securitate."
+                rows="4"
               />
             </div>
-          </div>
-        )}
 
-        {/* Content Tab */}
-        {activeTab === 'content' && (
-          <div className="course-editor-section">
-            <div className="video-upload-section">
-              <h2>Videoclipul principal</h2>
-              <div className="video-upload-area">
-                {videoPreview ? (
-                  <video controls className="video-preview">
-                    <source src={videoPreview} type="video/mp4" />
-                    Browser-ul tău nu suportă videoclipul.
-                  </video>
-                ) : (
-                  <div className="video-upload-placeholder">
-                    <span>🎥</span>
-                    <p>Încarcă videoclipul cursului</p>
-                  </div>
-                )}
-                <input
-                  type="file"
-                  accept="video/*"
-                  onChange={handleVideoUpload}
-                  className="video-upload-input"
-                />
-              </div>
-            </div>
-
-            {/* Lessons Section */}
-            <div className="lessons-section">
-              <div className="lessons-header">
-                <h2>Lecțiile cursului</h2>
-                <button className="add-lesson-btn" onClick={addLesson}>
-                  + Adaugă Lecție
-                </button>
-              </div>
-              
-              <div className="lessons-list">
-                {course.lessons?.map((lesson, index) => (
-                  <div key={lesson.id || index} className="lesson-item">
-                    <div className="lesson-header">
-                      <h3>Lecția {index + 1}</h3>
-                      <button 
-                        className="remove-lesson-btn"
-                        onClick={() => removeLesson(index)}
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                    
-                    <div className="lesson-content">
-                      <input
-                        type="text"
-                        className="lesson-title-input"
-                        value={lesson.title || ''}
-                        onChange={(e) => updateLesson(index, 'title', e.target.value)}
-                        placeholder="Titlul lecției"
-                      />
-                      
-                      <textarea
-                        className="lesson-description-textarea"
-                        value={lesson.description || ''}
-                        onChange={(e) => updateLesson(index, 'description', e.target.value)}
-                        placeholder="Descrierea lecției"
-                        rows="4"
-                      />
-                      
-                      <div className="lesson-meta">
-                        <div className="lesson-duration">
-                          <label>Durată (minute)</label>
-                          <input
-                            type="number"
-                            className="lesson-duration-input"
-                            value={lesson.duration || ''}
-                            onChange={(e) => updateLesson(index, 'duration', e.target.value)}
-                            placeholder="30"
-                          />
-                        </div>
-                        
-                        <div className="lesson-video">
-                          <label>Videoclip lecție</label>
-                          <input
-                            type="file"
-                            accept="video/*"
-                            className="lesson-video-input"
-                            onChange={(e) => {
-                              const file = e.target.files[0];
-                              if (file) {
-                                const reader = new FileReader();
-                                reader.onload = (e) => {
-                                  updateLesson(index, 'video', e.target.result);
-                                };
-                                reader.readAsDataURL(file);
-                              }
-                            }}
-                          />
-                        </div>
-                        
-                        <div className="lesson-preview">
-                          <input
-                            type="checkbox"
-                            id={`preview-${index}`}
-                            checked={lesson.isPreview || false}
-                            onChange={(e) => updateLesson(index, 'isPreview', e.target.checked)}
-                          />
-                          <label htmlFor={`preview-${index}`}>
-                            Lecție de preview (gratuită)
-                          </label>
-                        </div>
-                      </div>
-                    </div>
+            {/* 4. Ce vei învăța */}
+            <div className="course-learning-section">
+              <h3 className="section-title">Ce vei învăța</h3>
+              <div className="learning-points-list">
+                {course.features?.map((feature, index) => (
+                  <div key={index} className="learning-point-item">
+                    <span className="check-icon">✓</span>
+                    <input
+                      type="text"
+                      className="learning-point-input"
+                      value={feature}
+                      onChange={(e) => {
+                        const newFeatures = [...course.features];
+                        newFeatures[index] = e.target.value;
+                        updateCourseField('features', newFeatures);
+                      }}
+                      placeholder="80+ ore de conținut"
+                    />
+                    <button 
+                      className="remove-point-btn"
+                      onClick={() => {
+                        const newFeatures = course.features.filter((_, i) => i !== index);
+                        updateCourseField('features', newFeatures);
+                      }}
+                    >
+                      🗑️
+                    </button>
                   </div>
                 ))}
+                <button 
+                  className="add-point-btn"
+                  onClick={() => {
+                    const newFeatures = [...(course.features || []), ''];
+                    updateCourseField('features', newFeatures);
+                  }}
+                >
+                  + Adaugă punct
+                </button>
+              </div>
+            </div>
+
+            {/* 5. Programa cursului */}
+            <div className="course-curriculum-section">
+              <h3 className="section-title">Programa cursului</h3>
+              <div className="curriculum-list">
+                {course.curriculum?.map((lesson, index) => (
+                  <div key={index} className="curriculum-item">
+                    <span className="lesson-number">{index + 1}</span>
+                    <input
+                      type="text"
+                      className="curriculum-input"
+                      value={lesson}
+                      onChange={(e) => {
+                        const newCurriculum = [...course.curriculum];
+                        newCurriculum[index] = e.target.value;
+                        updateCourseField('curriculum', newCurriculum);
+                      }}
+                      placeholder="Network security"
+                    />
+                    <button 
+                      className="remove-curriculum-btn"
+                      onClick={() => {
+                        const newCurriculum = course.curriculum.filter((_, i) => i !== index);
+                        updateCourseField('curriculum', newCurriculum);
+                      }}
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                ))}
+                <button 
+                  className="add-curriculum-btn"
+                  onClick={() => {
+                    const newCurriculum = [...(course.curriculum || []), ''];
+                    updateCourseField('curriculum', newCurriculum);
+                  }}
+                >
+                  + Adaugă modul
+                </button>
               </div>
             </div>
           </div>
-        )}
 
-        {/* Instructor Tab */}
-        {activeTab === 'instructor' && (
-          <div className="course-editor-section">
-            <div className="instructor-section">
-              <h2>Informații despre instructor</h2>
-              
-              <div className="instructor-details">
-                <div className="instructor-avatar">
-                  {instructorImagePreview ? (
-                    <img src={instructorImagePreview} alt="Instructor" className="instructor-avatar-img" />
-                  ) : (
-                    <div className="instructor-avatar-upload">
-                      <span>👤</span>
-                      <p>Încarcă fotografia</p>
-                    </div>
-                  )}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleInstructorImageUpload}
-                    className="instructor-avatar-input"
-                  />
-                </div>
-                
-                <div className="instructor-info">
-                  <div className="instructor-field">
-                    <label>Numele complet</label>
-                    <input
-                      type="text"
-                      className="instructor-name-input"
-                      value={course.instructor?.name || ''}
-                      onChange={(e) => updateInstructorField('name', e.target.value)}
-                      placeholder="Numele instructorului"
-                    />
-                  </div>
-                  
-                  <div className="instructor-field">
-                    <label>Specializare</label>
-                    <input
-                      type="text"
-                      className="instructor-specialization-input"
-                      value={course.instructor?.specialization || ''}
-                      onChange={(e) => updateInstructorField('specialization', e.target.value)}
-                      placeholder="ex: Dezvoltator Full-Stack"
-                    />
-                  </div>
-                  
-                  <div className="instructor-field">
-                    <label>Experiență</label>
-                    <input
-                      type="text"
-                      className="instructor-experience-input"
-                      value={course.instructor?.experience || ''}
-                      onChange={(e) => updateInstructorField('experience', e.target.value)}
-                      placeholder="ex: 5+ ani experiență"
-                    />
-                  </div>
-                  
-                  <div className="instructor-field">
-                    <label>Biografie</label>
-                    <textarea
-                      className="instructor-bio-textarea"
-                      value={course.instructor?.bio || ''}
-                      onChange={(e) => updateInstructorField('bio', e.target.value)}
-                      placeholder="Biografia instructorului..."
-                      rows="6"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Pricing Tab */}
-        {activeTab === 'pricing' && (
-          <div className="course-editor-section">
-            <div className="pricing-section">
-              <h2>Prețuri și oferte</h2>
-              
-              <div className="price-inputs">
-                <div className="price-field">
-                  <label>Preț actual (RON)</label>
-                  <input
-                    type="number"
-                    className="price-input"
-                    value={course.price || ''}
-                    onChange={(e) => updateCourseField('price', parseFloat(e.target.value))}
-                    placeholder="299"
-                  />
-                </div>
-                
-                <div className="original-price-field">
-                  <label>Preț original (RON)</label>
-                  <input
-                    type="number"
-                    className="original-price-input"
-                    value={course.originalPrice || ''}
-                    onChange={(e) => updateCourseField('originalPrice', parseFloat(e.target.value))}
-                    placeholder="399"
-                  />
-                </div>
-              </div>
-              
-              <div className="free-course">
+          {/* Coloana dreaptă - Preț și detalii */}
+          <div className="course-edit-sidebar">
+            
+            {/* 5. Prețul în euro */}
+            <div className="price-section">
+              <div className="price-display">
+                <span className="currency">€</span>
                 <input
-                  type="checkbox"
-                  id="free-course"
-                  checked={course.isFree || false}
-                  onChange={(e) => updateCourseField('isFree', e.target.checked)}
+                  type="number"
+                  className="price-input"
+                  value={course.price || ''}
+                  onChange={(e) => updateCourseField('price', parseFloat(e.target.value))}
+                  placeholder="699"
                 />
-                <label htmlFor="free-course">
-                  Curs gratuit
-                </label>
+              </div>
+              <div className="price-note">Acces pe viață</div>
+            </div>
+
+            {/* 6. Detalii curs */}
+            <div className="course-details-section">
+              <h4 className="details-title">Detalii curs</h4>
+              <div className="details-grid">
+                <div className="detail-item">
+                  <span className="detail-icon">👨‍🏫</span>
+                  <div className="detail-content">
+                    <span className="detail-label">INSTRUCTOR</span>
+                    <input
+                      type="text"
+                      className="detail-input"
+                      value={course.instructor || ''}
+                      onChange={(e) => updateCourseField('instructor', e.target.value)}
+                      placeholder="Radu Popescu"
+                    />
+                  </div>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-icon">⏱️</span>
+                  <div className="detail-content">
+                    <span className="detail-label">DURATĂ</span>
+                    <input
+                      type="text"
+                      className="detail-input"
+                      value={course.duration || ''}
+                      onChange={(e) => updateCourseField('duration', e.target.value)}
+                      placeholder="80 ore"
+                    />
+                  </div>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-icon">🎯</span>
+                  <div className="detail-content">
+                    <span className="detail-label">NIVEL</span>
+                    <select
+                      className="detail-select"
+                      value={course.level || ''}
+                      onChange={(e) => updateCourseField('level', e.target.value)}
+                    >
+                      <option value="">Selectează nivelul</option>
+                      <option value="beginner">Începător</option>
+                      <option value="intermediate">Intermediar</option>
+                      <option value="advanced">Avansat</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-icon">🌍</span>
+                  <div className="detail-content">
+                    <span className="detail-label">LIMBĂ</span>
+                    <input
+                      type="text"
+                      className="detail-input"
+                      value={course.language || ''}
+                      onChange={(e) => updateCourseField('language', e.target.value)}
+                      placeholder="română"
+                    />
+                  </div>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-icon">📂</span>
+                  <div className="detail-content">
+                    <span className="detail-label">CATEGORIE</span>
+                    <select
+                      className="detail-select"
+                      value={course.category || ''}
+                      onChange={(e) => updateCourseField('category', e.target.value)}
+                    >
+                      <option value="">Selectează categoria</option>
+                      <option value="programming">Programare</option>
+                      <option value="design">Design</option>
+                      <option value="business">Business</option>
+                      <option value="marketing">Marketing</option>
+                      <option value="security">Securitate</option>
+                      <option value="languages">Limbi străine</option>
+                    </select>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        )}
 
-        {/* Settings Tab */}
-        {activeTab === 'settings' && (
-          <div className="course-editor-section">
-            <div className="course-settings">
-              <h3>Setări curs</h3>
-              <div className="settings-grid">
-                <div className="setting-item">
-                  <input
-                    type="checkbox"
-                    id="published"
-                    checked={course.published || false}
-                    onChange={(e) => updateCourseField('published', e.target.checked)}
-                  />
-                  <label htmlFor="published">Curs publicat</label>
-                </div>
-                
-                <div className="setting-item">
-                  <input
-                    type="checkbox"
-                    id="featured"
-                    checked={course.featured || false}
-                    onChange={(e) => updateCourseField('featured', e.target.checked)}
-                  />
-                  <label htmlFor="featured">Curs recomandat</label>
-                </div>
-                
-                <div className="setting-item">
-                  <input
-                    type="checkbox"
-                    id="certificate"
-                    checked={course.certificate || false}
-                    onChange={(e) => updateCourseField('certificate', e.target.checked)}
-                  />
-                  <label htmlFor="certificate">Oferă certificat</label>
-                </div>
-              </div>
-            </div>
-            
-            <div className="course-tags">
-              <h3>Tag-uri</h3>
-              <input
-                type="text"
-                className="tags-input"
-                value={course.tags?.join(', ') || ''}
-                onChange={(e) => updateCourseField('tags', e.target.value.split(',').map(tag => tag.trim()))}
-                placeholder="programming, javascript, react"
-              />
-            </div>
-            
-            <div className="course-requirements">
-              <h3>Cerințe</h3>
-              <textarea
-                className="requirements-textarea"
-                value={course.requirements || ''}
-                onChange={(e) => updateCourseField('requirements', e.target.value)}
-                placeholder="Cerințele pentru acest curs..."
-                rows="4"
-              />
-            </div>
-            
-            <div className="course-objectives">
-              <h3>Obiective</h3>
-              <textarea
-                className="objectives-textarea"
-                value={course.objectives || ''}
-                onChange={(e) => updateCourseField('objectives', e.target.value)}
-                placeholder="Ce vei învăța din acest curs..."
-                rows="4"
-              />
+            {/* Butonul de salvare */}
+            <div className="save-section">
+              <div className="save-status">{saveStatus}</div>
+              <button 
+                className="save-button"
+                onClick={handleSave}
+                disabled={saving}
+              >
+                {saving ? 'Se salvează...' : '💾 Salvează modificările'}
+              </button>
             </div>
           </div>
-        )}
-      </div>
-
-      {/* Footer */}
-      <div className="course-editor-footer">
-        <div className="footer-actions">
-          <button 
-            className="cancel-btn"
-            onClick={() => navigate('/admindanu')}
-          >
-            Anulează
-          </button>
-          <button 
-            className="save-btn"
-            onClick={handleSave}
-            disabled={saving}
-          >
-            {saving ? 'Se salvează...' : '💾 Salvează modificările'}
-          </button>
         </div>
       </div>
     </div>
