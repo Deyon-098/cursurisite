@@ -10723,6 +10723,7 @@ html {
 .sa-header-right {
   display: flex;
   align-items: center;
+  gap: 1rem;
 }
 
 .sa-user-profile {
@@ -10765,6 +10766,60 @@ html {
   font-size: 0.85rem;
   color: #a0aec0;
   line-height: 1.2;
+}
+
+.sa-logout-btn {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.1));
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: auto;
+  height: 44px;
+  backdrop-filter: blur(10px);
+  position: relative;
+  overflow: hidden;
+}
+
+.sa-logout-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.5s ease;
+}
+
+.sa-logout-btn:hover::before {
+  left: 100%;
+}
+
+.sa-logout-btn:hover {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(220, 38, 38, 0.2));
+  border-color: #ef4444;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
+  color: #ffffff;
+}
+
+.sa-logout-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+}
+
+.logout-text {
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
 }
 
 /* Main Layout */
@@ -12119,6 +12174,15 @@ html {
   .sa-header-right {
     width: 100%;
     justify-content: center;
+  }
+  
+  .sa-logout-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+  }
+  
+  .logout-text {
+    font-size: 0.8rem;
   }
   
   .sa-stats-grid {

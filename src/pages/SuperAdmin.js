@@ -4,10 +4,17 @@ import { databaseManager } from '../scripts/databaseManager';
 import { waitForFirebase } from '../firebase/config';
 
 export default function SuperAdmin() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // Verifică dacă există o sesiune salvată
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    const savedAuth = localStorage.getItem('superadmin_authenticated');
+    return savedAuth === 'true';
+  });
   const [loginData, setLoginData] = useState({ username: '', password: '' });
   const [loginError, setLoginError] = useState('');
-  const [loggedUser, setLoggedUser] = useState(null);
+  const [loggedUser, setLoggedUser] = useState(() => {
+    const savedUser = localStorage.getItem('superadmin_user');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
   const [activeSection, setActiveSection] = useState('dashboard');
   const [dashboardStats, setDashboardStats] = useState({
     totalCourses: 0,
@@ -513,10 +520,15 @@ export default function SuperAdmin() {
     const user = adminUsers[loginData.username];
     if (user && user.password === loginData.password) {
       setIsAuthenticated(true);
-      setLoggedUser({
+      const userData = {
         name: user.name,
         role: user.role
-      });
+      };
+      setLoggedUser(userData);
+      
+      // Salvează starea de autentificare în localStorage
+      localStorage.setItem('superadmin_authenticated', 'true');
+      localStorage.setItem('superadmin_user', JSON.stringify(userData));
     } else {
       setLoginError('Acces interzis');
     }
@@ -528,6 +540,20 @@ export default function SuperAdmin() {
       ...prev,
       [name]: value
     }));
+  };
+
+  // Funcție pentru logout
+  const handleLogout = () => {
+    const confirmLogout = window.confirm('Ești sigur că vrei să te deconectezi?');
+    if (confirmLogout) {
+      setIsAuthenticated(false);
+      setLoggedUser(null);
+      setLoginData({ username: '', password: '' });
+      
+      // Șterge datele salvate din localStorage
+      localStorage.removeItem('superadmin_authenticated');
+      localStorage.removeItem('superadmin_user');
+    }
   };
 
   // Funcții pentru gestionarea cursurilor
@@ -1543,6 +1569,13 @@ export default function SuperAdmin() {
                 <span className="sa-profile-role">{loggedUser?.role || 'Administrator'}</span>
               </div>
             </div>
+            <button 
+              className="sa-logout-btn"
+              onClick={handleLogout}
+              title="Deconectare"
+            >
+              <span className="logout-text">Deconectare</span>
+            </button>
           </div>
         </div>
       </div>
